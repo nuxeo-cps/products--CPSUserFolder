@@ -44,17 +44,10 @@ from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.Permissions import change_permissions as ChangePermissions
 from AccessControl.PermissionRole import _what_not_even_god_should_do
 from AccessControl.PermissionRole import rolesForPermissionOn
+from Products.CMFCore.utils import getToolByName
 
 
 _marker = []
-
-try:
-    from Products.CMFCore.utils import getToolByName
-except ImportError:
-    _cmf_support = 0
-else:
-    _cmf_support = 1
-
 
 #
 # Patch RoleManager to have groups
@@ -681,10 +674,6 @@ class UserFolderWithGroups(UserFolder):
         """
         # XXX this method has lame return values with full urls
 
-        if not _cmf_support:
-            # No CMF support: now way to take advantages of this feature
-            return []
-
         utool = getToolByName(object, 'portal_url')
         merged = {}
         object = getattr(object, 'aq_inner', object)
@@ -982,8 +971,3 @@ def addUserFolderWithGroups(dispatcher, id=None, REQUEST=None):
     container.__allow_groups__ = f
     if REQUEST is not None:
         dispatcher.manage_main(dispatcher, REQUEST)
-
-
-# Cleanup namespace
-
-del _cmf_support
