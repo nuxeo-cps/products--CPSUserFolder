@@ -6,12 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- Made more resistent to configuration problems in directories, when
-  calling isAuthenticating.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Added unit tests for role blocking.
-- Implemented per-role local role blocking in mergedLocalRoles for
-  CPSUserFolder and UserFolderWithGroups.
-  Still applies only for group:role:Anonymous (i.e., everybody).
-  Can be detected on a user folder when hasLocalRolesBlocking returns 2.
+-
