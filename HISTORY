@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.4.0 [R1 build 2004/08/23-05:56 by fermigier]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- A CPS MemberData Tool is available, to work in conjunction with the
+  CPS User Folder.
+Bug fixes:
+~~~~~~~~~~
+- Fixed case of non-password user fetch with login field != id field.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.3.2 [R1 build 2004/05/28-15:57 by guillaum]
 
 Requires:

@@ -3,11 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- A CPS MemberData Tool is available, to work in conjunction with the
-  CPS User Folder.
+-
 Bug fixes:
 ~~~~~~~~~~
-- Fixed case of non-password user fetch with login field != id field.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
