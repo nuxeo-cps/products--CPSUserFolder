@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- fix: getProperty with a default on an non-member user should work.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
