@@ -92,6 +92,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Users directory: groups field"},
         {'id': 'groups_dir', 'type': 'string', 'mode': 'w',
          'label': "Groups directory"},
+        {'id': 'groups_members_field', 'type': 'string', 'mode': 'w',
+         'label': "Groups directory: members field"},
+        {'id': 'roles_members_field', 'type': 'string', 'mode': 'w',
+         'label': "Roles directory: members field"},
         {'id': 'cache_timeout', 'type': 'int', 'mode': 'w',
          'label': "Cache timeout"},
         )
@@ -101,6 +105,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     users_roles_field = 'roles'
     users_groups_field = 'groups'
     groups_dir = 'groups'
+    groups_members_field  = 'members'
+    roles_members_field = 'members'
     cache_timeout = 300
 
     manage_options = (
@@ -517,9 +523,18 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         return dir.listEntryIds()
 
     security.declareProtected(ManageUsers, 'getGroupById')
-    def getGroupById(self, groupname):
+    def getGroupById(self, groupname, default=_marker):
         """Return the given group"""
-        raise NotImplementedError
+        groups_dir = self._getGroupsDirectory()
+        if groups_dir is not None:
+            if not groupname.startswith('role:'):
+                if groups_dir.hasEntry(groupname):
+                    return GroupEntryWrapper(groupname,
+                                             self._getGroupsDirectory(),
+                                             self.groups_members_field)
+        if default is not _marker:
+            return default
+        return _marker
 
     #
     # Private UserFolder object interface
@@ -1006,3 +1021,44 @@ class CPSUser(BasicUser):
         return "<CPSUser %s>" % self.getId()
 
 InitializeClass(CPSUser)
+
+############################################################################
+
+class GroupEntryWrapper:
+    """Wrapper for group entry
+
+    Minimum implementation to keep compatibility with old
+    NuxUserGroups and LDAPUserGroupsFolder code
+    """
+
+    def __init__(self, id, groups_dir, groups_members_field):
+        self.id  = id
+        self.groups_dir = groups_dir
+        self.groups_members_field = groups_members_field
+
+    def __repr__(self):
+        # I hope no code assumes that __repr__ is the groupname
+        return "<GroupEntryWrapper %s>" % self.id
+
+    def _getGroupsDirectory(self):
+        return self.groups_dir
+    
+    def getUsers(self):
+        groups_dir = self._getGroupsDirectory()
+        group_entry = groups_dir.getEntry(self.id)
+        return group_entry.get(self.groups_members_field, ())
+
+    def addUsers(self, userids):
+        raise NotImplementedError
+
+    def userHasRole(self, userid, roles):
+        raise NotImplementedError
+
+    def getMemberRoles(self, userid):
+        raise NotImplementedError
+
+    def setMemberRoles(self, userid, roles):
+        raise NotImplementedError
+
+############################################################################    
+    
