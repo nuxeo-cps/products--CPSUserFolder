@@ -60,7 +60,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     is what is used by identification and authentication, and the id
     field, which is whatever id the user will have once it's logged in.
 
-    However the 'user_name' and the 'id' are still identical.
+    However the 'username' and the 'id' are still identical.
     """
     meta_type = 'CPSUserFolder'
     id ='acl_users'
@@ -361,24 +361,24 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     # Private UserFolder object interface
     #
 
-    def identify(self, auth):
-        """Identify a user.
+##     def identify(self, auth):
+##         """Identify a user.
 
-        (Called by validate.)
+##         (Called by validate.)
 
-        From 'auth' which comes from the request, identify the user.
+##         From 'auth' which comes from the request, identify the user.
 
-        Returns its username and password, or (None, None).
-        """
-        if auth and auth.lower().startswith('basic '):
-            try:
-                name, password = (base64.decodestring(auth.split(' ')[-1])
-                                  .split(':', 1))
-            except:
-                raise 'BadRequest', 'Invalid authentication token'
-            return name, password
-        else:
-            return None, None
+##         Returns its username and password, or (None, None).
+##         """
+##         if auth and auth.lower().startswith('basic '):
+##             try:
+##                 name, password = (base64.decodestring(auth.split(' ')[-1])
+##                                   .split(':', 1))
+##             except:
+##                 raise 'BadRequest', 'Invalid authentication token'
+##             return name, password
+##         else:
+##             return None, None
 
     def authenticate(self, name, password, request):
         """Authenticate a user from a name and password.
@@ -584,27 +584,27 @@ class CPSUser(BasicUser):
 
     security.declarePublic('getId')
     def getId(self):
-        """Get the id of this user"""
+        """Get the id of this user."""
         return self._id
 
     security.declarePublic('getUserName')
     def getUserName(self):
-        """Get the name associated with this user"""
+        """Get the username (same as the id) associated with this user."""
         return self._id
 
     security.declarePrivate('_getPassword')
     def _getPassword(self):
-        """Return the password of the user."""
+        """Get the password of the user."""
         raise NotImplementedError
 
     security.declarePublic('getRoles')
     def getRoles(self):
-        """Return the user's roles"""
+        """Get the user's roles."""
         return self._roles
 
     security.declarePublic('getGroups')
     def getGroups(self):
-        """Return the user's groups"""
+        """Get the user's groups."""
         return self._groups
 
     # CPS extension
@@ -614,13 +614,15 @@ class CPSUser(BasicUser):
 
         This includes groups of groups, and special groups
         like role:Anonymous and role:Authenticated.
+
+        Groups of groups are not implemented yet.
         """
         return self.getGroups() + ('role:Anonymous', 'role:Authenticated')
         #raise NotImplementedError
 
     security.declarePublic('getDomains')
     def getDomains(self):
-        """Return the user's domains"""
+        """Get the user's domains (always empty)."""
         return []
 
     #
