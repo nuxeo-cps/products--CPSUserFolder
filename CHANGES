@@ -9,4 +9,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Use new authentication scheme (isAuthenticating before getEntryAuthenticated)
+-

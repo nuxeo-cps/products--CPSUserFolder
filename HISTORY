@@ -1,4 +1,20 @@
 *******************************************
+** CPSUserFolder V0.2.0 [R1 build 2004/05/06-17:01 by guillaum]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Use new authentication scheme (isAuthenticating before getEntryAuthenticated)
+
+*******************************************
 ** CPSUserFolder V0.1.0 [R1 build 2004/05/05-00:23 by guillaum]
 
 Requires:
