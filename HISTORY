@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.3.2 [R1 build 2004/05/28-15:57 by guillaum]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- The user object now has a getProperty method.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Small speed improvement in local roles computation.
+- Log a better message when a subclass of ValueErorr is caught.
+
+*******************************************
 ** CPSUserFolder V0.3.1 [R1 build 2004/05/13-16:58 by guillaum]
 
 Requires:
