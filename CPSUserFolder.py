@@ -680,7 +680,7 @@ class CPSUser(BasicUser):
             if local_roles:
                 if callable(local_roles):
                     local_roles = local_roles() or {}
-                for r in local_roles.get(name, []):
+                for r in local_roles.get(name, ()):
                     if r:
                         lrd[r] = None
             local_group_roles = getattr(object, '__ac_local_group_roles__', None)
@@ -688,7 +688,7 @@ class CPSUser(BasicUser):
                 if callable(local_group_roles):
                     local_group_roles = local_group_roles() or {}
                 for g in groups:
-                    for r in local_group_roles.get(g, []):
+                    for r in local_group_roles.get(g, ()):
                         if r:
                             lrd[r] = None
             lr = lrd.keys()
