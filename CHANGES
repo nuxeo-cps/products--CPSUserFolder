@@ -13,4 +13,6 @@ New internal features:
  - doAddUser()
  - doDelUser()
  - doChangeUser()
+- Implements getGroupByIds().getUsers() 
+  on CPSUserFolder
 
