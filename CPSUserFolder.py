@@ -602,6 +602,11 @@ class CPSUser(BasicUser):
         """Get the user's roles."""
         return self._roles
 
+    security.declarePublic('getDomains')
+    def getDomains(self):
+        """Get the user's domains (always empty)."""
+        return []
+
     security.declarePublic('getGroups')
     def getGroups(self):
         """Get the user's groups."""
@@ -619,11 +624,6 @@ class CPSUser(BasicUser):
         """
         return self.getGroups() + ('role:Anonymous', 'role:Authenticated')
         #raise NotImplementedError
-
-    security.declarePublic('getDomains')
-    def getDomains(self):
-        """Get the user's domains (always empty)."""
-        return []
 
     #
     # Internal API
