@@ -4,11 +4,6 @@ TODO for CPSUserFolder
 
 $Id$
 
-- Memberdata Tool, to make use completely transparent in CMF.
-
 - Caching.
 
 - Implement NotImplemented related to modification API.
-
-- Implement NotImplemented methods that break the ZMI local roles page
-  (due to groups)
