@@ -529,12 +529,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if groups_dir is not None:
             if not groupname.startswith('role:'):
                 if groups_dir.hasEntry(groupname):
-                    return GroupEntryWrapper(groupname,
-                                             self._getGroupsDirectory(),
-                                             self.groups_members_field)
-        if default is not _marker:
-            return default
-        return _marker
+                    group_entry = groups_dir.getEntry(groupname, default)
+                    group_members = group_entry.get(self.groups_members_field,
+                                                    ())
+                    return Group(groupname, group_members)
+            if default is not _marker:
+                return default
+        else:
+            raise ValueError, "The directory %s doesn't exist" % self.groups_dir
 
     #
     # Private UserFolder object interface
@@ -1024,29 +1026,23 @@ InitializeClass(CPSUser)
 
 ############################################################################
 
-class GroupEntryWrapper:
+class Group:
     """Wrapper for group entry
 
     Minimum implementation to keep compatibility with old
     NuxUserGroups and LDAPUserGroupsFolder code
     """
 
-    def __init__(self, id, groups_dir, groups_members_field):
+    def __init__(self, id, users):
         self.id  = id
-        self.groups_dir = groups_dir
-        self.groups_members_field = groups_members_field
+        self.users = users
 
     def __repr__(self):
         # I hope no code assumes that __repr__ is the groupname
-        return "<GroupEntryWrapper %s>" % self.id
-
-    def _getGroupsDirectory(self):
-        return self.groups_dir
+        return "<Group %s>" % self.id
     
     def getUsers(self):
-        groups_dir = self._getGroupsDirectory()
-        group_entry = groups_dir.getEntry(self.id)
-        return group_entry.get(self.groups_members_field, ())
+        return self.users
 
     def addUsers(self, userids):
         raise NotImplementedError
