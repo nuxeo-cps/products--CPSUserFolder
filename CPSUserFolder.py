@@ -421,14 +421,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         raise NotImplementedError
 
     security.declareProtected(ManageUsers, 'getUserById')
-    def getUserById(self, id, default=_marker):
+    def getUserById(self, id, default=None):
         """Return the user corresponding to the given id."""
         user = self.getUser(id)
-        if user is not None:
-            return user
-        if default is not _marker:
+        if user is None:
             return default
-        raise KeyError(id)
+        return user
 
     security.declarePrivate('_doAddUser')
     def _doAddUser(self, name, password, roles, domains, groups=(), **kw):
@@ -911,6 +909,8 @@ class CPSUser(BasicUser):
 
         # Now update this object to make it correspond to the new user.
         user = aclu.getUserById(id)
+        if user is None:
+            raise KeyError(id)
 
         LOG('setProperties', DEBUG, 'old entry = %s' % self._entry)
         self._roles = user._roles

@@ -274,7 +274,8 @@ class TestCPSUserFolder(unittest.TestCase):
 
         # Entry bob doesn't exist yet.
         self.assertRaises(KeyError, mdir.getEntry, 'bob')
-        self.assertRaises(KeyError, aclu.getUserById, 'bob')
+        self.assertEquals(aclu.getUserById('bob'), None)
+        self.assertEquals(aclu.getUserById('bob', 'no'), 'no')
         self.assertEquals(aclu.getUser('bob'), None)
         self.assertEquals(aclu.getUserNames(), [])
 
@@ -313,7 +314,7 @@ class TestCPSUserFolder(unittest.TestCase):
         # Delete the user entry though the user folder.
         aclu.userFolderDelUsers(['bob'])
         self.assertRaises(KeyError, mdir.getEntry, 'bob')
-        self.assertRaises(KeyError, aclu.getUserById, 'bob')
+        self.assertEquals(aclu.getUserById('bob'), None)
 
     def test_properties(self):
         self.makeWithDirs()

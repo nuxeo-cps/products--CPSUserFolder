@@ -9,10 +9,6 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Implements standard UF API :
- - doAddUser()
- - doDelUser()
- - doChangeUser()
-- Implements getGroupByIds().getUsers() 
-  on CPSUserFolder
-
+- Implements standard UserFolder API: doAddUser, doDelUser, doChangeUser.
+- Implements getGroupByIds().getUsers() on CPSUserFolder.
+- Switch getUserById to the new Zope 2.7 signature (never raises).
