@@ -241,10 +241,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         % (auth_field, name))
                     return None
                 if password is not None:
+                    # Refetch the entry authenticated.
                     id = res[0]
                     entry = dir.getEntryAuthenticated(id, password)
                 else:
-                    entry = res[0]
+                    # Get the entry that the search returned.
+                    id, entry = res[0]
         except AuthenticationFailed:
             return None
         except KeyError:
