@@ -18,22 +18,11 @@
 # $Id$
 
 import os, sys
-if __name__ == '__main__':
-    execfile(os.path.join(sys.path[0], 'framework.py'))
 
-from unittest import TestSuite, makeSuite
-from Testing import ZopeTestCase
-from CPSUserFolderTestCase import CPSUserFolderTestCase
-
-ZopeTestCase.installProduct('CPSSchemas')
-ZopeTestCase.installProduct('CPSDirectory')
-ZopeTestCase.installProduct('CPSUserFolder')
+import unittest
 
 from Interface import Interface
 from Interface.Verify import verifyObject, verifyClass
-
-#from AccessControl.IUserFolder import IStandardUserFolder
-    
 
 # TODO: fix AccessControl.IUserFolder instead
 class IStandardUserFolder(Interface):
@@ -41,7 +30,7 @@ class IStandardUserFolder(Interface):
     def getUsers(): pass
     def getUserNames(): pass
 
-class TestCPSUserFolder(CPSUserFolderTestCase):
+class TestCPSUserFolder(unittest.TestCase):
     def testInterface(self):
         from Products.CPSUserFolder.CPSUserFolder import CPSUserFolder
 
@@ -51,6 +40,9 @@ class TestCPSUserFolder(CPSUserFolderTestCase):
 
 
 def test_suite():
-    suite = TestSuite()
-    suite.addTest(makeSuite(TestCPSUserFolder))
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestCPSUserFolder))
     return suite
+
+if __name__ == '__main__':
+    execfile(os.path.join(sys.path[0], 'framework.py'))
