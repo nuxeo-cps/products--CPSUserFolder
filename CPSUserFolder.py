@@ -55,6 +55,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     """CPS User Folder
 
     User folder whose configuration is based on directories.
+
+    This user folder makes a difference between the login field, which
+    is what is used by identification and authentication, and the id
+    field, which is whatever id the user will have once it's logged in.
+
+    However the 'user_name' and the 'id' are still identical.
     """
     meta_type = 'CPSUserFolder'
     id ='acl_users'
@@ -69,14 +75,17 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     _properties = SimpleItemWithProperties._properties + (
         {'id': 'users_dir', 'type': 'string', 'mode': 'w',
          'label': "Users directory"},
-        {'id': 'users_roles_id', 'type': 'string', 'mode': 'w',
+        {'id': 'users_login_field', 'type': 'string', 'mode': 'w',
+         'label': "Users directory: login field"},
+        {'id': 'users_roles_field', 'type': 'string', 'mode': 'w',
          'label': "Users directory: roles field"},
-        {'id': 'users_groups_id', 'type': 'string', 'mode': 'w',
+        {'id': 'users_groups_field', 'type': 'string', 'mode': 'w',
          'label': "Users directory: groups field"},
         )
-    users_dir = 'users'
-    users_roles_id = 'roles'
-    users_groups_id = 'groups'
+    users_dir = 'members'
+    users_login_field = ''
+    users_roles_field = 'roles'
+    users_groups_field = 'groups'
 
     manage_options = SimpleItemWithProperties.manage_options
 
@@ -160,10 +169,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     # CPS extension
     security.declarePrivate('getUserWithAuthentication')
-    def getUserWithAuthentication(self, name, password):
-        """Get a user by its username if it is authenticated.
+    def getUserWithAuthentication(self, name, password, use_login=0):
+        """Get a user by its id if it is authenticated.
 
         If password is None, don't check authentication.
+        If use_login is true, name is the user's login instead of its id.
         Returns an unwrapped user object, or None.
         """
         # Check cache
@@ -175,14 +185,48 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if dir is None:
             return None
         if password is not None and not dir.isAuthenticating():
-            LOG('getUserWithAuthentication', DEBUG,
+            LOG('getUserWithAuthentication', ERROR,
                 "Directory %s is not authenticating" % dir.getId())
             return None
+
+        # Find on which field identification is done
+        if use_login:
+            auth_field = self.users_login_field
+            if not auth_field:
+                auth_field = dir.id_field
+        else:
+            auth_field = dir.id_field
+
+        # Get entry authenticated
         try:
-            if password is not None:
-                entry = dir.getEntryAuthenticated(name, password)
+            if auth_field == dir.id_field:
+                if password is not None:
+                    entry = dir.getEntryAuthenticated(name, password)
+                else:
+                    entry = dir._getEntry(name)
             else:
-                entry = dir._getEntry(name)
+                if password is not None:
+                    # We'll have to refetch the entry authenticated.
+                    return_fields = None
+                else:
+                    # We can directly fetch the entry.
+                    return_fields = ['*']
+                res = dir.searchEntries(return_fields=return_fields,
+                                        **{auth_field: [name]})
+                if not res:
+                    LOG('getUserWithAuthentication', DEBUG, "No result for %s=%s"
+                        % (auth_field, name))
+                    return None
+                if len(res) > 1:
+                    LOG('getUserWithAuthentication', ERROR,
+                        "Search on %s=%s returned several entries"
+                        % (auth_field, name))
+                    # But continue with the first
+                if password is not None:
+                    id = res[0]
+                    entry = dir.getEntryAuthenticated(id, password)
+                else:
+                    entry = res[0]
         except AuthenticationFailed:
             return None
         except KeyError:
@@ -193,8 +237,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             return None
 
         id = entry[dir.id_field]
-        roles = entry[self.users_roles_id]
-        groups = entry[self.users_groups_id]
+        roles = entry[self.users_roles_field]
+        groups = entry[self.users_groups_field]
         user = self._buildUser(id, roles, groups, entry, dir)
 
         # Set to cache
@@ -203,7 +247,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     security.declareProtected(ManageUsers, 'getUser')
     def getUser(self, name):
-        """Get a user by its username.
+        """Get a user by its username (which is also the id).
 
         Returns an unwrapped user object, or None.
         """
@@ -348,7 +392,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             else:
                 return None
         else:
-            return self.getUserWithAuthentication(name, password)
+            return self.getUserWithAuthentication(name, password, use_login=1)
 
     #def authorize(self, user, accessed, container, name, value, roles):
 ##         """ Check if a user is authorized to access an object.
@@ -361,6 +405,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     #def validate(self, request, auth='', roles=_noroles):
 
     # CPS Private extensions
+
+    security.declarePublic('hasLocalRolesBlocking')
+    def hasLocalRolesBlocking(self):
+        """Test if local roles blocking is implemented in this user folder."""
+        return 1
 
     def mergedLocalRoles(self, object, withgroups=0):
         """Get the merged local roles of an object.
@@ -457,11 +506,6 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 continue
             break
         return merged
-
-    security.declarePublic('hasLocalRolesBlocking')
-    def hasLocalRolesBlocking(self):
-        """Test if local roles blocking is implemented in this user folder."""
-        return 1
 
     def _allowedRolesAndUsers(self, ob):
         """
@@ -683,21 +727,7 @@ class CPSUser(BasicUser):
     def authenticate(self, password, request=None):
         """Check that a user's password is correct."""
         # This method should be unused.
-        dir = self._dir
-        if not dir.isAuthenticating():
-            return 0
-        try:
-            # XXX we don't really need to fetch the whole entry
-            entry = dir.getEntryAuthenticated(id, password)
-        except AuthenticationFailed:
-            LOG('CPSUserFolder.authenticate', DEBUG,
-                "Authentication failed for %s" % id)
-            return 0
-        except KeyError:
-            LOG('CPSUserFolder.authenticate', DEBUG,
-                "No user %s" % id)
-            return 0
-        return 1
+        raise NotImplementedError
 
     security.declarePublic('has_role')
     #def has_role(self, roles, object=None):
