@@ -407,16 +407,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     security.declareProtected(ManageUsers, 'getGroupNames')
     def getGroupNames(self):
+        """Return a list of group names"""
         dir = self._getGroupsDirectory()
         if dir is None:
             return []
         else:
-            return dir.searchEntries()
-
-        return result
-
-        """Return a list of group names"""
-        raise NotImplementedError
+            return dir.listEntryIds()
 
     security.declareProtected(ManageUsers, 'getGroupById')
     def getGroupById(self, groupname):
