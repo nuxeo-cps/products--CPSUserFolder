@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.3.1 [R1 build 2004/05/13-16:58 by guillaum]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- More strict when login authentication returns several entries: always fail.
+- Avoid costly searches on empty username.
+
+*******************************************
 ** CPSUserFolder V0.3.0 [R1 build 2004/05/12-17:33 by guillaum]
 
 Requires:

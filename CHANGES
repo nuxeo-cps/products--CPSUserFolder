@@ -9,5 +9,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- More strict when login authentication returns several entries: always fail.
-- Avoid costly searches on empty username.
+-
