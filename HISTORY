@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.4.1 [R1 build 2004/09/15-15:18 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added a "Groups directory" property to retrieve the list of groups
+  to be able to manage local roles.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Updated TODO.
+
+*******************************************
 ** CPSUserFolder V0.4.0 [R1 build 2004/08/23-05:56 by fermigier]
 
 Requires:
