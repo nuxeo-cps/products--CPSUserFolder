@@ -1,4 +1,20 @@
 *******************************************
+** CPSUserFolder V0.7.0 [R1 build 2005/01/28-15:01 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Implemented user cache, with configurable timeout.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.6.0 [R1 build 2005/01/20-11:44 by ben]
 
 Requires:
