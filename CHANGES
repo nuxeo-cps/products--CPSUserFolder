@@ -10,4 +10,4 @@ Bug fixes:
   calling isAuthenticating.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Added unit tests for role blocking.
