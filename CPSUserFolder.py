@@ -83,6 +83,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Users directory"},
         {'id': 'users_login_field', 'type': 'string', 'mode': 'w',
          'label': "Users directory: login field"},
+        {'id': 'users_password_field', 'type': 'string', 'mode': 'w',
+         'label': "Users directory: password field"},
         {'id': 'users_roles_field', 'type': 'string', 'mode': 'w',
          'label': "Users directory: roles field"},
         {'id': 'users_groups_field', 'type': 'string', 'mode': 'w',
@@ -92,6 +94,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         )
     users_dir = 'members'
     users_login_field = ''
+    users_password_field = ''
     users_roles_field = 'roles'
     users_groups_field = 'groups'
     groups_dir = 'groups'
@@ -202,10 +205,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         del cache[key]
 
     security.declarePrivate('_buildUser')
-    def _buildUser(self, id, roles, groups, entry, dir):
+    def _buildUser(self, id, roles, groups, entry, dir, password):
         """Build a user object from information."""
         aclu = self
-        return CPSUser(id, roles, groups, entry, dir, aclu)
+        return CPSUser(id, roles, groups, entry, dir, aclu, password)
 
     #
     # Public UserFolder object interface
@@ -297,7 +300,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         id = entry[dir.id_field]
         roles = entry[self.users_roles_field]
         groups = entry[self.users_groups_field]
-        user = self._buildUser(id, roles, groups, entry, dir)
+        if password is None:
+            # XXX no raise if users_password_field has not be set
+            if self.users_password_field <> '':
+                password = entry[self.users_password_field]
+
+        user = self._buildUser(id, roles, groups, entry, dir, password)
 
         # Set to cache
         self._setUserToCache((name, password, not not use_login), user)
@@ -656,14 +664,14 @@ class CPSUser(BasicUser):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    def __init__(self, id, roles, groups, entry, dir, aclu):
+    def __init__(self, id, roles, groups, entry, dir, aclu, password):
         self._id = id
         self._roles = tuple(roles) + ('Anonymous', 'Authenticated')
         self._groups = tuple(groups)
         self._entry = entry
         self._dir = dir
         self._aclu = aclu
-
+        self._password = password
     #
     # Basic API
     #
@@ -681,7 +689,7 @@ class CPSUser(BasicUser):
     security.declarePrivate('_getPassword')
     def _getPassword(self):
         """Get the password of the user."""
-        raise NotImplementedError
+        return self._password
 
     security.declarePublic('getRoles')
     def getRoles(self):
