@@ -164,11 +164,61 @@ class TestCPSUser(unittest.TestCase):
 
 class TestCPSUserFolder(unittest.TestCase):
 
-    def testInterface(self):
+    def makeFolders(self):
+        self.root = Folder('root')
+        self.root.fold = Folder('fold')
+        self.root.fold.ob = Folder('ob')
+        return self.root
 
+    def testInterface(self):
         # TODO: remove 'tentative=1' after putting __implements__ in
         # CPSUserFolder class
         verifyClass(IStandardUserFolder, CPSUserFolder, tentative=1)
+
+    def test_mergedLocalRoles(self):
+        aclu = CPSUserFolder()
+        root = self.makeFolders()
+        fold = root.fold
+        ob = fold.ob
+
+        self.assertEquals(aclu.mergedLocalRoles(root), {})
+        self.assertEquals(aclu.mergedLocalRoles(fold), {})
+        self.assertEquals(aclu.mergedLocalRoles(ob), {})
+
+        # Basic
+        fold.manage_setLocalRoles('someuser', ['Daddy'])
+        self.assertEquals(aclu.mergedLocalRoles(fold),
+                          {'someuser': ['Daddy']})
+        self.assertEquals(aclu.mergedLocalRoles(fold, withgroups=1),
+                          {'user:someuser': ['Daddy']})
+
+        # Blocking a specific role for a user
+        # (ignored by mergedLocalRoles because cannot be expressed)
+        ob.manage_setLocalRoles('someuser', ['-Daddy'])
+        self.assertEquals(aclu.mergedLocalRoles(ob, withgroups=1),
+                          {'user:someuser': ['Daddy']})
+
+        # Blocking all roles for a user (ignored by mergedLocalRoles)
+        # (ignored by mergedLocalRoles because cannot be expressed)
+        ob.manage_setLocalRoles('someuser', ['-'])
+        self.assertEquals(aclu.mergedLocalRoles(ob, withgroups=1),
+                          {'user:someuser': ['Daddy']})
+
+        # Blocking all roles for all
+        ob.manage_delLocalRoles(['someuser'])
+        ob.manage_setLocalGroupRoles('role:Anonymous', ['-'])
+        self.assertEquals(aclu.mergedLocalRoles(ob, withgroups=1),
+                          {})
+
+        # Blocking a specific role for all
+        ob.manage_setLocalGroupRoles('role:Anonymous', ['-Daddy'])
+        self.assertEquals(aclu.mergedLocalRoles(ob, withgroups=1),
+                          {})
+
+        # Pathological cases
+        ob.manage_setLocalGroupRoles('role:Anonymous', ['', '-', 'Bar'])
+        self.assertEquals(aclu.mergedLocalRoles(ob, withgroups=1),
+                          {'group:role:Anonymous': ['Bar']})
 
 
 def test_suite():
