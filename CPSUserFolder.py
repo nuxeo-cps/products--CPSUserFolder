@@ -259,7 +259,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 else:
                     # We can directly fetch the entry.
                     return_fields = ['*']
-                res = dir.searchEntries(return_fields=return_fields,
+                res = dir._searchEntries(return_fields=return_fields,
                                         **{auth_field: [name]})
                 if not res:
                     LOG('getUserWithAuthentication', DEBUG,
@@ -391,7 +391,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         dir = self._getUsersDirectory()
         if dir is None:
             return []
-        return dir.searchEntries(return_fields=return_fields, **kw)
+        return dir._searchEntries(return_fields=return_fields, **kw)
 
     # CPS Public extensions
 
