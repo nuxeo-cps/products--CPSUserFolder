@@ -7,7 +7,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the1
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -17,33 +17,90 @@
 #
 # $Id$
 
-from Testing import ZopeTestCase
-from Products.CPSDefault.tests import CPSTestCase
-from Products.CPSUserFolder.CPSUserFolder \
-    import CPSUserFolder, addCPSUserFolder
+from zExceptions.unauthorized import Unauthorized
 
-ZopeTestCase.installProduct('CPSSchemas')
-ZopeTestCase.installProduct('CPSDirectory')
+from Testing import ZopeTestCase
+from Products.ExternalMethod.ExternalMethod import ExternalMethod
+
+from Products.CPSDefault.tests import CPSTestCase
+
 ZopeTestCase.installProduct('CPSUserFolder')
 
-def _doAddUser(self, *args):
+from Products.CPSUserFolder.CPSUserFolder import CPSUserFolder
+from Products.CPSUserFolder.CPSUserFolder import addCPSUserFolder
+
+## XXX
+## Patch on CPSDirectory.BaseDirectory to allow the creation of
+## use within the tests
+
+from Products.CPSDirectory.BaseDirectory import BaseDirectory
+
+def checkCreateEntryAllowed(self, id=None, entry=None):
+    return 1
+
+def checkEditEntryAllowed(self, id=None, entry=None):
+    return 1
+
+
+BaseDirectory.checkCreateEntryAllowed = checkCreateEntryAllowed
+BaseDirectory.checkEditEntryAllowed = checkEditEntryAllowed
+
+## //
+## EOF
+
+class CPSUserFolderTestCase(CPSTestCase.CPSTestCase):
     pass
-CPSUserFolder._doAddUser = _doAddUser
+    ##def _setupUser(self):
+    ##    '''Creates the default user.'''
+    ##    try:
+    ##        CPSTestCase.CPSTestCase._setupUser(self)
+    ##    except Unauthorized:
+    ##        pass
 
 class CPSUserFolderInstaller(CPSTestCase.CPSInstaller):
+
     def addPortal(self, id):
         # CPS Default Site
         CPSTestCase.CPSInstaller.addPortal(self, id)
         portal = getattr(self.app, id)
 
+        # add a CPSUserFolder
         portal.manage_delObjects(ids=['acl_users'])
-        addCPSUserFolder(portal)
+        _properties =  {
+            'users_dir' : 'members',
+            'users_login_field' : 'id',
+            'users_password_field' : 'password', 
+            'users_roles_field' :'roles', 
+            'users_groups_field' :'groups' ,
+            'groups_dir' : 'groups',
+            'cache_timeout' : 300 
+            }
+        addCPSUserFolder(portal, **_properties)
 
-# FIXME: not working yet
-#CPSTestCase.setupPortal(PortalInstaller=CPSUserFolderInstaller)
+        # Delete the std Members directory since it's not compatible
+        # with the CPSUserFolder
+        dtool = portal.portal_directories
+        dtool.manage_delObjects(['members'])
 
-CPSTestCase.setupPortal()
+        _properties = {
+            'schema' : 'members',
+            'schema_search' : 'members_search',
+            'layout' : 'members',
+            'layout_search' : 'members_search',
+            'id_field' : 'id',
+            'title_field' : 'fullname',
+            'search_substring_fields' : [],
+            }
+        
+        dtool.manage_addCPSDirectory('members', 'CPS ZODB Directory',
+                                     **_properties)
 
-class CPSUserFolderTestCase(CPSTestCase.CPSTestCase):
-    pass
+        # Add a Manager
+        users_dir = dtool.members
+        manager_entry = {'id':'manager',
+                         'password':'secret',
+                         'roles' : ['Manager', 'Member'],
+                         }
+        users_dir.createEntry(manager_entry)
 
+CPSTestCase.setupPortal(PortalInstaller=CPSUserFolderInstaller)
