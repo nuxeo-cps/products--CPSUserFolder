@@ -127,7 +127,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     security.declarePrivate('_getUsersDirectory')
     def _getUsersDirectory(self):
         """Get the underlying users directory."""
-        dtool = getToolByName(self, 'portal_directories')
+        dtool = getToolByName(self, 'portal_directories', None)
+        if dtool is None:
+            # User folder has been instanciated outside a CPS site.
+            return None
         try:
             dir = getattr(dtool, self.users_dir)
         except AttributeError:
