@@ -19,15 +19,11 @@
 
 from AccessControl.Permissions import add_user_folders as AddUserFolders
 
-
-from Products.CMFCore.DirectoryView import registerDirectory
-
 from Products.CPSUserFolder import CPSUserFolder
-
 
 def initialize(registrar):
     registrar.registerClass(
         CPSUserFolder.CPSUserFolder,
-        permission = AddUserFolders,
-        constructors = (CPSUserFolder.addCPSUserFolder,),
-        icon = 'zmi/cpsuserfolder_icon.gif')
+        permission=AddUserFolders,
+        constructors=(CPSUserFolder.addCPSUserFolder,),
+        icon='zmi/cpsuserfolder_icon.gif')

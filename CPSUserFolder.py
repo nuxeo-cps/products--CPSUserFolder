@@ -24,21 +24,17 @@ A user folder based on CPSDirectory and CPSSchemas.
 
 from zLOG import LOG, DEBUG, WARNING, ERROR
 
-from types import StringType, ListType
+from types import ListType
 import base64
 
-import Acquisition
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass
 
-from AccessControl import Unauthorized
 from AccessControl import ClassSecurityInfo
 from AccessControl.User import BasicUser, BasicUserFolder
 from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.PermissionRole import rolesForPermissionOn
 from AccessControl.PermissionRole import _what_not_even_god_should_do
-from AccessControl.SecurityManagement import newSecurityManager
-from AccessControl.SecurityManagement import noSecurityManager
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
@@ -73,7 +69,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     However the 'username' and the 'id' are still identical.
     """
     meta_type = 'CPSUserFolder'
-    id ='acl_users'
+    id = 'acl_users'
     title = 'CPS User Folder'
 
     isPrincipiaFolderish = 1
@@ -567,7 +563,7 @@ InitializeClass(CPSUserFolder)
 
 
 def addCPSUserFolder(container, id=None, REQUEST=None, **kw):
-    """Add a CPS User Folder"""
+    """Add a CPS User Folder called 'acl_users'"""
     container = container.this() # For FactoryDispatcher.
     f = CPSUserFolder(**kw)
     container._setObject('acl_users', f)
