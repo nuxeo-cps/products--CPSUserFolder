@@ -22,7 +22,7 @@ CPSUserFolder
 A user folder based on CPSDirectory and CPSSchemas.
 """
 
-from zLOG import LOG, DEBUG, WARNING
+from zLOG import LOG, DEBUG, WARNING, ERROR
 
 from types import StringType
 import base64
@@ -43,6 +43,8 @@ from AccessControl.SecurityManagement import noSecurityManager
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CPSSchemas.PropertiesPostProcessor import PropertiesPostProcessor
+
+from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 
 
 _marker = []
@@ -67,15 +69,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     _properties = SimpleItemWithProperties._properties + (
         {'id': 'users_dir', 'type': 'string', 'mode': 'w',
          'label': "Users directory"},
-        {'id': 'users_password_id', 'type': 'string', 'mode': 'w',
-         'label': "Users directory: password field"},
         {'id': 'users_roles_id', 'type': 'string', 'mode': 'w',
          'label': "Users directory: roles field"},
         {'id': 'users_groups_id', 'type': 'string', 'mode': 'w',
          'label': "Users directory: groups field"},
         )
     users_dir = 'users'
-    users_password_id = 'password'
     users_roles_id = 'roles'
     users_groups_id = 'groups'
 
@@ -113,7 +112,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         try:
             dir = getattr(dtool, self.users_dir)
         except AttributeError:
-            LOG('CPSUserFolder._getUsersDirectory', WARNING,
+            LOG('CPSUserFolder', WARNING,
                 "Missing directory '%s'" % self.users_dir)
             dir = None
         return dir
@@ -150,6 +149,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if hasattr(request, cache_key):
             delattr(request, cache_key)
 
+    security.declarePrivate('_buildUser')
+    def _buildUser(self, id, roles, groups, entry, dir):
+        """Build a user object from information."""
+        return CPSUser(id, roles, groups, entry, dir)
+
     #
     # Public UserFolder object interface
     #
@@ -159,6 +163,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     def getUserWithAuthentication(self, name, password):
         """Get a user by its username if it is authenticated.
 
+        If password is None, don't check authentication.
         Returns an unwrapped user object, or None.
         """
         # Check cache
@@ -169,23 +174,30 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         dir = self._getUsersDirectory()
         if dir is None:
             return None
-        check_auth = (password is not None)
-        if check_auth and hasattr(aq_base(dir), 'getEntryAuthenticated'):
-            entry = dir.getEntryAuthenticated(name, password)
-            check_auth = 0
-        else:
-            # Here we could do a search to get the entry
-            entry = dir.getEntry(name, default=None)
-        if entry is None:
+        if password is not None and not dir.isAuthenticating():
+            LOG('getUserWithAuthentication', DEBUG,
+                "Directory %s is not authenticating" % dir.getId())
+            return None
+        try:
+            if password is not None:
+                entry = dir.getEntryAuthenticated(name, password)
+            else:
+                entry = dir._getEntry(name)
+        except AuthenticationFailed:
+            return None
+        except KeyError:
+            return None
+        except ValueError, e:
+            LOG('getUserWithAuthentication', ERROR,
+                "Got ValueError(%s) while authenticating %s" % (e, name))
             return None
 
         id = entry[dir.id_field]
         roles = entry[self.users_roles_id]
         groups = entry[self.users_groups_id]
-        user = CPSUser(id, roles, groups, entry, dir)
-        if check_auth and not user.authenticate(password):
-            return None
+        user = self._buildUser(id, roles, groups, entry, dir)
 
+        # Set to cache
         self._setUserToCache(name, password, user)
         return user
 
@@ -670,14 +682,22 @@ class CPSUser(BasicUser):
     security.declarePrivate('authenticate')
     def authenticate(self, password, request=None):
         """Check that a user's password is correct."""
+        # This method should be unused.
         dir = self._dir
-        if hasattr(aq_base(dir), 'getEntryAuthenticated'):
-            # XXX Should use hasEntry, we don't need to refetch
+        if not dir.isAuthenticating():
+            return 0
+        try:
+            # XXX we don't really need to fetch the whole entry
             entry = dir.getEntryAuthenticated(id, password)
-            return (entry is not None)
-        else:
-            # Compare password
-            return (password == self._entry[dir.users_password_id])
+        except AuthenticationFailed:
+            LOG('CPSUserFolder.authenticate', DEBUG,
+                "Authentication failed for %s" % id)
+            return 0
+        except KeyError:
+            LOG('CPSUserFolder.authenticate', DEBUG,
+                "No user %s" % id)
+            return 0
+        return 1
 
     security.declarePublic('has_role')
     #def has_role(self, roles, object=None):
