@@ -429,7 +429,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         users_dir = self._getUsersDirectory()
         if users_dir is not None:
             new_entry = {
-                self.users_login_field : name,
+                users_dir.id_field : name,
                 self.users_password_field : password,
                 self.users_roles_field : roles,
                 }
@@ -446,7 +446,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         users_dir = self._getUsersDirectory()
         if users_dir is not None:
             entry = {
-                self.users_login_field : name,
+                users_dir.id_field : name,
                 self.users_password_field : password,
                 self.users_roles_field : roles,
                 }
