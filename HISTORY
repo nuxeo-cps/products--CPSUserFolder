@@ -1,4 +1,22 @@
 *******************************************
+** CPSUserFolder V0.7.1 [R1 build 2005/03/07-16:13 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Implements standard UserFolder API: doAddUser, doDelUser, doChangeUser.
+- Implements getGroupByIds().getUsers() on CPSUserFolder.
+- Switch getUserById to the new Zope 2.7 signature (never raises).
+
+*******************************************
 ** CPSUserFolder V0.7.0 [R1 build 2005/01/28-15:01 by madarche]
 
 Requires:
