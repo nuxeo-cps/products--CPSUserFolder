@@ -248,7 +248,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             return None
         except ValueError, e:
             LOG('getUserWithAuthentication', ERROR,
-                "Got ValueError(%s) while authenticating %s" % (e, name))
+                "Got %s(%s) while authenticating %s" %
+                (e.__class__.__name__, e, name))
             return None
 
         id = entry[dir.id_field]
