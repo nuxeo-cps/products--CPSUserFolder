@@ -1,5 +1,5 @@
-# (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
-# Author: Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2005 Nuxeo SARL <http://nuxeo.com>
+# Author: Julien Anguenot <ja@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -32,6 +32,7 @@ from Products.CPSUserFolder.CPSUserFolder import addCPSUserFolder
 ## XXX
 ## Patch on CPSDirectory.BaseDirectory to allow the creation of
 ## use within the tests
+## it's a problem for the first user that we wanna create
 
 from Products.CPSDirectory.BaseDirectory import BaseDirectory
 
@@ -48,23 +49,20 @@ BaseDirectory.checkEditEntryAllowed = checkEditEntryAllowed
 ## //
 ## EOF
 
-class CPSUserFolderTestCase(CPSTestCase.CPSTestCase):
-    pass
-    ##def _setupUser(self):
-    ##    '''Creates the default user.'''
-    ##    try:
-    ##        CPSTestCase.CPSTestCase._setupUser(self)
-    ##    except Unauthorized:
-    ##        pass
+CPSUserFolderTestCase = CPSTestCase.CPSTestCase
 
 class CPSUserFolderInstaller(CPSTestCase.CPSInstaller):
 
-    def addPortal(self, id):
-        # CPS Default Site
-        CPSTestCase.CPSInstaller.addPortal(self, id)
-        portal = getattr(self.app, id)
+    #
+    # XXX : perform links in between members -> roles and
+    # members -> groups directory within computed fields
+    # CPSUserFolder limitation for the moment.
+    #
 
-        # add a CPSUserFolder
+    def _getPortal(self, id):
+        return getattr(self.app, id)
+
+    def _addCPSUserFolder(self, portal):
         portal.manage_delObjects(ids=['acl_users'])
         _properties =  {
             'users_dir' : 'members',
@@ -73,12 +71,19 @@ class CPSUserFolderInstaller(CPSTestCase.CPSInstaller):
             'users_roles_field' :'roles', 
             'users_groups_field' :'groups' ,
             'groups_dir' : 'groups',
+            'groups_members_field': 'members',
+            'roles_members_field': 'members',
             'cache_timeout' : 300 
             }
         addCPSUserFolder(portal, **_properties)
 
+    def _setupMembersDirectory(self, portal):
+
+        #
         # Delete the std Members directory since it's not compatible
         # with the CPSUserFolder
+        #
+
         dtool = portal.portal_directories
         dtool.manage_delObjects(['members'])
 
@@ -102,5 +107,82 @@ class CPSUserFolderInstaller(CPSTestCase.CPSInstaller):
                          'roles' : ['Manager', 'Member'],
                          }
         users_dir.createEntry(manager_entry)
+        assert('members' in dtool.objectIds())
 
+    def _setupGroupsDirectory(self, portal):
+
+        #
+        # Delete the std Groups directory since it's not compatible
+        # with the CPSUserFolder
+        #
+
+        dtool = portal.portal_directories
+        dtool.manage_delObjects(['groups'])
+
+        _properties = {
+            'schema' : 'groups',
+            'schema_search' : 'groups_search',
+            'layout' : 'groups',
+            'layout_search' : 'groups_search',
+            'id_field' : 'group',
+            'title_field' : 'group',
+            'search_substring_fields' : [],
+            }
+        
+        dtool.manage_addCPSDirectory('groups', 'CPS ZODB Directory',
+                                     **_properties)
+        assert('groups' in dtool.objectIds())
+
+    def _setupRolesDirectory(self, portal):
+
+        #
+        # Delete the std Roles directory since it's not compatible
+        # with the CPSUserFolder
+        #
+
+        dtool = portal.portal_directories
+        dtool.manage_delObjects(['roles'])
+
+        _properties = {
+            'schema' : 'roles',
+            'schema_search' : 'roles_search',
+            'layout' : 'roles',
+            'layout_search' : 'roles_search',
+            'id_field' : 'role',
+            'title_field' : 'role',
+            'search_substring_fields' : [],
+            }
+        
+        dtool.manage_addCPSDirectory('roles', 'CPS ZODB Directory',
+                                     **_properties)
+        assert('roles' in dtool.objectIds())
+
+        roles_dir = dtool.roles
+
+        default_entries = ({'role' : 'Member', 'members' : ()},
+                           {'role' : 'Manager', 'members' : ()},
+                           )
+        for each in default_entries:
+            roles_dir.createEntry(each)
+
+    ################################################################
+    ################################################################
+    
+    def addPortal(self, id):
+        # CPS Default Site
+        CPSTestCase.CPSInstaller.addPortal(self, id)
+        portal = self._getPortal(id)
+
+        # add a CPSUserFolder
+        self._addCPSUserFolder(portal)
+
+        # setup Members directory
+        self._setupMembersDirectory(portal)
+
+        # setup Groups directory
+        self._setupGroupsDirectory(portal)
+
+        # setup Roles directory
+        self._setupRolesDirectory(portal)
+        
 CPSTestCase.setupPortal(PortalInstaller=CPSUserFolderInstaller)
