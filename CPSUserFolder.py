@@ -417,7 +417,16 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
            do the actual adding of a user. The 'password' will be the
            original input password, unencrypted. The implementation of this
            method is responsible for performing any needed encryption."""
-        raise NotImplementedError
+        users_dir = self._getUsersDirectory()
+        if users_dir is not None:
+            new_entry = {
+                self.users_login_field : name,
+                self.users_password_field : password,
+                self.users_roles_field : roles,
+                }
+            new_entry.update(kw)
+            return users_dir.createEntry(new_entry)
+        return None
 
     security.declarePrivate('_doChangeUser')
     def _doChangeUser(self, name, password, roles, domains, **kw):
@@ -425,13 +434,30 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
            to make the actual changes to a user. The 'password' will be the
            original input password, unencrypted. The implementation of this
            method is responsible for performing any needed encryption."""
-        raise NotImplementedError
+        users_dir = self._getUsersDirectory()
+        if users_dir is not None:
+            entry = {
+                self.users_login_field : name,
+                self.users_password_field : password,
+                self.users_roles_field : roles,
+                }
+            entry.update(kw)
+            res = users_dir.editEntry(entry)
+            # invalidate cache for name
+            self._removeUserFromIdCache(name)
+            return res
+        return None
 
     security.declarePrivate('_doDelUsers')
     def _doDelUsers(self, names):
         """Delete one or more users. This should be implemented by subclasses
            to do the actual deleting of users."""
-        raise NotImplementedError
+        users_dir = self._getUsersDirectory()
+        if users_dir is not None:
+            for name in names:
+                users_dir.deleteEntry(name)
+                # invalidate cache for name
+                self._removeUserFromIdCache(name)
 
     security.declareProtected(ManageUsers, 'userFolderAddUser')
     def userFolderAddUser(self, name, password, roles, domains, **kw):
