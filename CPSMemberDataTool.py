@@ -183,6 +183,8 @@ class CPSMemberData(SimpleItem):
     def getProperty(self, key, default=_marker):
         u = self.getUser()
         if not hasattr(aq_base(u), 'getProperty'):
+            if default is not _marker:
+                return default
             raise ValueError("User %s does not have a getProperty" %
                              self.getId())
         if default is _marker:
