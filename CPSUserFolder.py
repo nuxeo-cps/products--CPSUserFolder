@@ -51,15 +51,6 @@ _marker = []
 CACHE_KEY = 'CPSUserFolder'
 
 
-def _isinstance(ob, cls):
-    try:
-        return isinstance(ob, cls)
-    except TypeError:
-        # In python 2.1 isinstance() raises TypeError
-        # instead of returning 0 for ExtensionClasses.
-        return 0
-
-
 class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     BasicUserFolder):
     """CPS User Folder
@@ -836,7 +827,7 @@ class CPSUser(BasicUser):
                 return default
             raise KeyError(key)
         value = self._entry[key]
-        if _isinstance(value, ListType):
+        if isinstance(value, ListType):
             value = value[:]
         return value
 
