@@ -10,6 +10,6 @@ LDAPUserGroupsFolder and PluggableUserFolder. It is extendable through
 addition directory types, for instance the LDAP backend uses an LDAP
 directory.
 
-CPSUserFolder also provides a replacement CMF membership and memberdata
-tool that understand CPSSchemas' schemas and can talk directly to the
-cps user folder.
+CPSUserFolder also provides a replacement CMF memberdata tool that
+understand CPSSchemas' schemas and can talk directly to the cps user
+folder.
