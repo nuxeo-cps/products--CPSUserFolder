@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Works (incompletely) as a Plone folder: implements a GRUF API.
 Bug fixes:
 ~~~~~~~~~~
 - fix: getProperty with a default on an non-member user should work.

@@ -23,6 +23,7 @@ from Products.CMFCore.CMFCorePermissions import ManagePortal
 
 import CPSUserFolder
 import CPSMemberDataTool
+import PatchForGruf # XXX
 
 def initialize(registrar):
     registrar.registerClass(
