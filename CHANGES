@@ -1,12 +1,15 @@
 Requires:
 ~~~~~~~~~
--
+- NuxUserGroups must not be used anymore !
 New features:
 ~~~~~~~~~~~~~
 - Works (incompletely) as a Plone folder: implements a GRUF API.
+- CPSUserFolder now does everything that NuxUserGroups did.
+- Basic role blocking ('group:role:Anonymous': '-') works.
 Bug fixes:
 ~~~~~~~~~~
 - fix: getProperty with a default on an non-member user should work.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Implemented basic local role blocking in mergedLocalRoles for
+  the two use folder (UserFolderWithGroups and CPSUserFolder).
