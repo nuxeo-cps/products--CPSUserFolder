@@ -24,7 +24,7 @@ A user folder based on CPSDirectory and CPSSchemas.
 
 from zLOG import LOG, DEBUG, WARNING, ERROR
 
-from types import StringType
+from types import StringType, ListType
 import base64
 
 import Acquisition
@@ -49,6 +49,16 @@ from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 
 _marker = []
 cache_key = '_cps_user_folder_cache'
+
+
+def _isinstance(ob, cls):
+    try:
+        return isinstance(ob, cls)
+    except TypeError:
+        # In python 2.1 isinstance() raises TypeError
+        # instead of returning 0 for ExtensionClasses.
+        return 0
+
 
 class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     BasicUserFolder):
@@ -624,6 +634,19 @@ class CPSUser(BasicUser):
         """
         return self.getGroups() + ('role:Anonymous', 'role:Authenticated')
         #raise NotImplementedError
+
+    # CPS extension
+    security.declarePublic('getProperty')
+    def getProperty(self, key, default=_marker):
+        """Get the value of a property of the user."""
+        if not self._entry.has_key(key):
+            if default is not _marker:
+                return default
+            raise KeyError(key)
+        value = self._entry[key]
+        if _isinstance(value, ListType):
+            value = value[:]
+        return value
 
     #
     # Internal API
