@@ -92,6 +92,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Users directory: groups field"},
         {'id': 'groups_dir', 'type': 'string', 'mode': 'w',
          'label': "Groups directory"},
+        {'id': 'roles_dir', 'type': 'string', 'mode': 'w',
+         'label': "Roles directory"},
         {'id': 'groups_members_field', 'type': 'string', 'mode': 'w',
          'label': "Groups directory: members field"},
         {'id': 'roles_members_field', 'type': 'string', 'mode': 'w',
@@ -105,6 +107,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     users_roles_field = 'roles'
     users_groups_field = 'groups'
     groups_dir = 'groups'
+    roles_dir = 'roles'
     groups_members_field  = 'members'
     roles_members_field = 'members'
     cache_timeout = 300
