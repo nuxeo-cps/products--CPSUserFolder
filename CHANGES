@@ -9,4 +9,8 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Implements standard UF API :
+ - doAddUser()
+ - doDelUser()
+ - doChangeUser()
+
