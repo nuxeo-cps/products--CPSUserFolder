@@ -6,7 +6,8 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Made more resistent to configuration problems in directories, when
+  calling isAuthenticating.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
