@@ -514,7 +514,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     v = [r for r in v if r and r[0] != '-']
                     if merged.has_key(k):
                         merged[k] = merged[k] + v
-                    else:
+                    elif v:
                         merged[k] = v
             # deal with groups
             if withgroups:
@@ -531,7 +531,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         v = [r for r in v if r and r[0] != '-']
                         if merged.has_key(k):
                             merged[k] = merged[k] + v
-                        else:
+                        elif v:
                             merged[k] = v
                     if stop_loop:
                         break
