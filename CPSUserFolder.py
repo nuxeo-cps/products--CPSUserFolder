@@ -496,9 +496,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     if withgroups:
                         k = 'user:'+k # groups
                     if merged.has_key(k):
-                        merged[k] = merged[k] + v
+                        merged[k] = merged[k] + list(v)
                     else:
-                        merged[k] = v
+                        merged[k] = list(v)
             # deal with groups
             if withgroups:
                 if hasattr(object, '__ac_local_group_roles__'):
@@ -508,9 +508,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     for k, v in dict.items():
                         k = 'group:'+k
                         if merged.has_key(k):
-                            merged[k] = merged[k] + v
+                            merged[k] = merged[k] + list(v)
                         else:
-                            merged[k] = v
+                            merged[k] = list(v)
             # end groups
             if hasattr(object, 'aq_parent'):
                 object = aq_inner(object.aq_parent)
