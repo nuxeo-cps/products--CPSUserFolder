@@ -87,11 +87,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Users directory: roles field"},
         {'id': 'users_groups_field', 'type': 'string', 'mode': 'w',
          'label': "Users directory: groups field"},
+        {'id': 'groups_dir', 'type': 'string', 'mode': 'w',
+         'label': "Groups directory"},
         )
     users_dir = 'members'
     users_login_field = ''
     users_roles_field = 'roles'
     users_groups_field = 'groups'
+    groups_dir = 'groups'
 
     manage_options = SimpleItemWithProperties.manage_options
 
@@ -119,6 +122,20 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     #
     # Internal methods
     #
+    security.declarePrivate('_getGroupsDirectory')
+    def _getGroupsDirectory(self):
+        """Get the underlying users directory."""
+        dtool = getToolByName(self, 'portal_directories', None)
+        if dtool is None:
+            # User folder has been instanciated outside a CPS site.
+            return None
+        try:
+            dir = getattr(dtool, self.groups_dir)
+        except AttributeError:
+            LOG('CPSUserFolder', WARNING,
+                "Missing directory '%s'" % self.groups_dir)
+            dir = None
+        return dir
 
     security.declarePrivate('_getUsersDirectory')
     def _getUsersDirectory(self):
@@ -390,6 +407,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     security.declareProtected(ManageUsers, 'getGroupNames')
     def getGroupNames(self):
+        dir = self._getGroupsDirectory()
+        if dir is None:
+            return []
+        else:
+            return dir.searchEntries()
+
+        return result
+
         """Return a list of group names"""
         raise NotImplementedError
 
