@@ -435,7 +435,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 }
             new_entry.update(kw)
             return users_dir.createEntry(new_entry)
-        return None
+        else:
+            raise ValueError, "The directory %s doesn't exist" % self.users_dir
 
     security.declarePrivate('_doChangeUser')
     def _doChangeUser(self, name, password, roles, domains, **kw):
@@ -455,7 +456,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             # invalidate cache for name
             self._removeUserFromIdCache(name)
             return res
-        return None
+        else:
+            raise ValueError, "The directory %s doesn't exist" % self.users_dir
 
     security.declarePrivate('_doDelUsers')
     def _doDelUsers(self, names):
@@ -467,6 +469,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 users_dir.deleteEntry(name)
                 # invalidate cache for name
                 self._removeUserFromIdCache(name)
+        else:
+            raise ValueError, "The directory %s doesn't exist" % self.users_dir
 
     security.declareProtected(ManageUsers, 'userFolderAddUser')
     def userFolderAddUser(self, name, password, roles, domains, **kw):
