@@ -25,8 +25,6 @@ from Products.CMFCore.DirectoryView import registerDirectory
 from Products.CPSUserFolder import CPSUserFolder
 
 
-registerDirectory('skins/cps_userfolder', globals())
-
 def initialize(registrar):
     registrar.registerClass(
         CPSUserFolder.CPSUserFolder,
