@@ -43,6 +43,7 @@ from AccessControl.User import reqattr
 from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.Permissions import change_permissions as ChangePermissions
 from AccessControl.PermissionRole import _what_not_even_god_should_do
+from AccessControl.PermissionRole import rolesForPermissionOn
 
 
 _marker = []
