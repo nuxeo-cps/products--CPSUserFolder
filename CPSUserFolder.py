@@ -677,23 +677,25 @@ class CPSUser(BasicUser):
                 if callable(local_roles):
                     local_roles = local_roles() or {}
                 for r in local_roles.get(name, []):
-                    lrd[r] = None
+                    if r:
+                        lrd[r] = None
             local_group_roles = getattr(object, '__ac_local_group_roles__', None)
             if local_group_roles:
                 if callable(local_group_roles):
                     local_group_roles = local_group_roles() or {}
                 for g in groups:
                     for r in local_group_roles.get(g, []):
-                        lrd[r] = None
+                        if r:
+                            lrd[r] = None
             lr = lrd.keys()
             # Positive role assertions
             for r in lr:
-                if not r.startswith('-'):
+                if r[0] != '-':
                     if not local.has_key(r):
                         local[r] = 1 # acquired role
             # Negative (blocking) role assertions
             for r in lr:
-                if r.startswith('-'):
+                if r[0] == '-':
                     r = r[1:]
                     if not r:
                         # role '-' blocks all acquisition
