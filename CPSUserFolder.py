@@ -176,6 +176,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         If use_login is true, name is the user's login instead of its id.
         Returns an unwrapped user object, or None.
         """
+        if not name.strip():
+            # Avoid passing an empty search to some backends.
+            return None
+
         # Check cache
         user = self._getUserFromCache(name, password)
         if user is not None:
