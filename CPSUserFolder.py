@@ -294,7 +294,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 elif cache_pw is not None:
                     # Incorrect password, purge from cache
                     LOG('getUserWithAuthentication', DEBUG,
-                        "Incorrect password for cached user" % userid)
+                        "Incorrect password for cached user %s" % userid)
                     self._removeUserIdFromCache(userid)
                     userid = None
 
