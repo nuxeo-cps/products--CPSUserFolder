@@ -291,6 +291,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 if password is None or password == cache_pw:
                     LOG('getUserWithAuthentication', TRACE,
                         "Returning user %s from cache" % userid)
+                    # Ensure this user's persistent references are not from a
+                    # foreign connection
+                    # XXX but when multithreaded there are still problems
+                    user._aclu = self
+                    user._dir = dir
                     return user
                 elif cache_pw is not None:
                     # Incorrect password, purge from cache
