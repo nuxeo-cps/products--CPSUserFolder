@@ -1,0 +1,23 @@
+<dtml-var manage_page_header>
+<dtml-let management_view="'Security'">
+<dtml-var manage_tabs>
+</dtml-let>
+
+<p class="form-help">
+  Managing the access restrictions in Zope is split up in two parts,
+  managing Permissions and managing Local Roles
+</p>
+
+<ul class="form-help">
+  <li style="padding-bottom: 1em">
+    You can <a href="manage_permissions">Manage Permissions</a>
+    to change the mapping of roles to permissions.
+  </li>
+  <li>
+    You can <a href="manage_listLocalRoles">Manage Local Roles</a>
+    to change the mapping of roles to users or groups.
+  </li>
+</ul>
+
+<dtml-var manage_page_footer>
+

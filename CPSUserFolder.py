@@ -480,13 +480,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     def mergedLocalRoles(self, object, withgroups=0):
         """Get the merged local roles of an object.
 
-        Returns a dictionnary.
+        Returns a dictionnary, with users as keys and roles as values.
 
         When called with withgroups=1, the keys are of the form user:foo and
         group:bar.
         """
         merged = {}
         object = aq_inner(object)
+        stop_loop = 0
         while 1:
             if hasattr(object, '__ac_local_roles__'):
                 dict = object.__ac_local_roles__ or {}
@@ -495,10 +496,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 for k, v in dict.items():
                     if withgroups:
                         k = 'user:'+k # groups
+                    # Skip blocking roles
+                    v = [r for r in v if r and r[0] != '-']
                     if merged.has_key(k):
-                        merged[k] = merged[k] + list(v)
+                        merged[k] = merged[k] + v
                     else:
-                        merged[k] = list(v)
+                        merged[k] = v
             # deal with groups
             if withgroups:
                 if hasattr(object, '__ac_local_group_roles__'):
@@ -507,10 +510,17 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         dict = dict()
                     for k, v in dict.items():
                         k = 'group:'+k
+                        # Blocking, simplest case: everyone is blocked.
+                        if k == 'group:role:Anonymous' and '-' in v:
+                            stop_loop = 1
+                        # Skip blocking roles
+                        v = [r for r in v if r and r[0] != '-']
                         if merged.has_key(k):
-                            merged[k] = merged[k] + list(v)
+                            merged[k] = merged[k] + v
                         else:
-                            merged[k] = list(v)
+                            merged[k] = v
+                    if stop_loop:
+                        break
             # end groups
             if hasattr(object, 'aq_parent'):
                 object = aq_inner(object.aq_parent)
@@ -573,7 +583,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             break
         return merged
 
-    def _allowedRolesAndUsers(self, ob):
+    security.declarePrivate('getAllowedRolesAndUsersOfObject')
+    def getAllowedRolesAndUsersOfObject(self, ob):
         """
         Return a list of roles, users and groups with View permission.
         Used by PortalCatalog to filter out items you're not allowed to see.
@@ -590,10 +601,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             del allowed['Owner']
         return list(allowed.keys())
 
-    def _getAllowedRolesAndUsers(self, user):
+    # old spelling
+    _allowedRolesAndUsers = getAllowedRolesAndUsersOfObject
+
+    security.declarePrivate('getAllowedRolesAndUsersOfUser')
+    def getAllowedRolesAndUsersOfUser(self, user):
         """Get the current roles and groups a user represents."""
         res = list(user.getRoles())
-        res.append('user:%s' % user.getUserName())
+        res.append('user:' + user.getUserName())
         if hasattr(aq_base(user), 'getComputedGroups'):
             groups = user.getComputedGroups()
         elif hasattr(aq_base(user), 'getGroups'):
@@ -605,8 +620,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             LOG('_getAllowedRolesAndUsers', DEBUG, 'no groups for %s' % `user`)
             groups = ('role:Anonymous',)
         for group in groups:
-            res.append('group:%s' % group)
+            res.append('group:' + group)
         return res
+
+    # old spelling
+    _getAllowedRolesAndUsers = getAllowedRolesAndUsersOfUser
 
 InitializeClass(CPSUserFolder)
 

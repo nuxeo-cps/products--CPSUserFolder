@@ -1,0 +1,64 @@
+<dtml-var manage_page_header>
+<dtml-let management_view="'User Groups'">
+<dtml-var manage_tabs>
+</dtml-let>
+
+<form action="manage_editGroups" method="post">
+<dtml-if getGroupNames>
+<p class="form-help">
+The following groups have been defined. Click on the name of a 
+group to edit users in that group.
+</p>
+
+<table cellspacing="0" cellpadding="2" border="0">
+<dtml-in getGroupNames>
+<dtml-let groupname=sequence-item
+          group="getGroupById(groupname)"
+          title="group.Title()">
+<dtml-if sequence-odd>
+<tr class="row-normal">
+<dtml-else>
+<tr class="row-hilite">
+</dtml-if>
+  <td align="left" valign="top">
+  <input type="checkbox" name="groupnames:list" value="&dtml-groupname;" />
+  </td>
+  <td align="left" valign="top">
+  <div class="list-item">
+  <a href="manage_showGroup?groupname=<dtml-var groupname
+   fmt=url-quote>"><img src="<dtml-var 
+   BASEPATH1>/p_/User_icon" alt="" border="0" /><img src="<dtml-var 
+   BASEPATH1>/p_/User_icon" alt="" border="0" /></a>
+  <a href="manage_showGroup?groupname=<dtml-var groupname
+   fmt=url-quote>">&dtml-groupname;<dtml-if title> (&dtml-title;)</dtml-if></a>
+  </div>
+  </td>
+</tr>
+</dtml-let>
+</dtml-in getGroupNames>
+<tr>
+  <td align="left" valign="top">&nbsp;
+  </td>
+  <td align="left" valign="top">
+  <div class="form-element">
+  <input class="form-element" type="submit" name="submit_add_" value="Add..." />
+  <input class="form-element" type="submit" name="submit_del" value="Delete" />
+  </div>
+  </td>
+</tr>
+</table>
+<dtml-else getGroupNames>
+<p class="std-text">
+There are no groups defined.
+</p>
+
+<p>
+<div class="form-element">
+<input class="form-element" type="submit" name="submit_add_" value="Add..." />
+</div>
+</p>
+</dtml-if getGroupNames>
+</form>
+
+<dtml-var manage_page_footer>
+

@@ -1,0 +1,78 @@
+<dtml-var manage_page_header>
+<dtml-var "manage_form_title(this(), _, form_title='Change Group')">
+<dtml-let group="getGroupById(groupname)"
+          usernames="group.getUsers()">
+
+
+<FORM ACTION="manage_editGroups" METHOD="POST">
+<TABLE>
+<TR>
+<TD VALIGN="TOP">
+<div class="form-label">
+Name
+</div>
+</TD>
+<TD VALIGN="TOP">
+<div class="form-text">
+&dtml-groupname;
+</div>
+</TD>
+</TR>
+<TR><TD COLSPAN=2>&nbsp;</TD></TR>
+
+<TR>
+<TD VALIGN="TOP">
+<div class="form-label">
+Title
+</div>
+</TD>
+<TD VALIGN="TOP">
+<div class="form-element">
+<INPUT TYPE="TEXT" NAME="title" SIZE="30"
+  VALUE="<dtml-var "group.Title()" html_quote>" />
+</div>
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN="TOP">
+<div class="form-label">
+Users
+</div>
+</TD>
+<TD VALIGN="TOP">
+<div class="form-element">
+<dtml-try>
+  <dtml-let allusernames="list_local_userids()">
+  <select name="usernames:list" size="10" multiple>
+  <dtml-in allusernames>
+  <dtml-let sel="(_['sequence-item'] in usernames) and 'selected' or ''">
+  <OPTION VALUE="&dtml-sequence-item;" &dtml-sel;>&dtml-sequence-item;
+  </dtml-let>
+  </dtml-in>
+  </select>
+  </dtml-let>
+<dtml-except OverflowError>
+  <textarea name="usernames:lines" rows="10"><dtml-var "_.string.join(usernames, '\n')" html_quote></textarea>
+</dtml-try>
+</div>
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN="TOP">
+<div class="form-label">
+<INPUT TYPE="HIDDEN" NAME="groupname" VALUE="&dtml-groupname;" />
+<br /><br />
+</td>
+<td valign="top">
+<INPUT class="form-element" TYPE="SUBMIT" NAME="submit_edit" VALUE="Change" />
+</div>
+</TD>
+</TR>
+
+</TABLE>
+</FORM>
+
+</dtml-let>
+<dtml-var manage_page_footer>

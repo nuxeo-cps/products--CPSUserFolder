@@ -1,0 +1,56 @@
+<dtml-var manage_page_header>
+<dtml-with "_(management_view='Security')">
+<dtml-if manage_tabs><dtml-var manage_tabs></dtml-if>
+</dtml-with>
+<p class="form-help">
+Local roles allow you to give particular groups extra roles in the 
+context of this object, in addition to the roles they already have. 
+</p>
+
+<p class="form-help">
+To change the local roles for this group, select the extra roles this 
+group should have in the context of this object and click the <em>
+Save Changes</em> button.
+</p>
+
+<form action="manage_setLocalGroupRoles" method="post">
+<table cellspacing="0" cellpadding="2" border="0">
+<tr>
+  <td align="left" valign="top">
+  <div class="form-label">Group</div>
+  </td>
+  <td align="left" valign="top">
+  <div class="form-label">Roles</div>
+  </td>
+</tr>
+<tr>
+  <td align="left" valign="top">
+  <div class="form-text">&dtml-groupid;</div>
+  </td>
+  <td align="left" valign="top">
+  <div class="form-element">
+  <input type="hidden" name="groupid" value="&dtml-groupid;">
+<dtml-with "_(group_roles=get_local_roles_for_groupid(groupid))">
+  <select name="roles:list" size="5" multiple>
+<dtml-in valid_roles><dtml-if 
+"_['sequence-item'] not in ('Anonymous', 'Shared', 'Authenticated')">
+<option value="&dtml-sequence-item;"<dtml-if 
+"_['sequence-item'] in group_roles"> selected</dtml-if>>&dtml-sequence-item;
+</dtml-if>
+</dtml-in>
+  </select>
+</dtml-with>
+  </div>
+  </td>
+</tr>
+<tr>
+  <td align="left" valign="top" colspan="2">
+  <div class="form-element">
+  <input class="form-element" type="submit" value="Save Changes" />
+  </div>
+  </td>
+</tr>
+</table>
+</form>
+
+<dtml-var manage_page_footer>
