@@ -3,7 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- added a "group directory" property
+  to retrieve a group list
+  to be able to manage Local Roles
+
 Bug fixes:
 ~~~~~~~~~~
 -
