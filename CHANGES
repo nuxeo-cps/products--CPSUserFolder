@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- The user object now has a getProperty method.
 Bug fixes:
 ~~~~~~~~~~
 -
