@@ -20,7 +20,7 @@
 import sys
 from zLOG import LOG, INFO, ERROR
 from AccessControl.Permissions import add_user_folders as AddUserFolders
-from Products.CMFCore.CMFCorePermissions import ManagePortal
+from Products.CMFCore.permissions import ManagePortal
 
 from UserFolderWithGroups import UserFolderWithGroups, addUserFolderWithGroups
 

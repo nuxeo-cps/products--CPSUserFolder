@@ -31,8 +31,8 @@ from AccessControl import ClassSecurityInfo
 from OFS.SimpleItem import SimpleItem
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import UniqueObject
-from Products.CMFCore.CMFCorePermissions import SetOwnProperties
-from Products.CMFCore.CMFCorePermissions import ManagePortal
+from Products.CMFCore.permissions import SetOwnProperties
+from Products.CMFCore.permissions import ManagePortal
 from Products.CMFCore.ActionProviderBase import ActionProviderBase
 
 from Products.CMFCore.interfaces.portal_memberdata import portal_memberdata as IMemberDataTool
