@@ -214,14 +214,15 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 res = dir.searchEntries(return_fields=return_fields,
                                         **{auth_field: [name]})
                 if not res:
-                    LOG('getUserWithAuthentication', DEBUG, "No result for %s=%s"
-                        % (auth_field, name))
+                    LOG('getUserWithAuthentication', DEBUG,
+                        "No result for %s=%s" % (auth_field, name))
                     return None
                 if len(res) > 1:
                     LOG('getUserWithAuthentication', ERROR,
-                        "Search on %s=%s returned several entries"
+                        "Search on %s=%s returned several entries, "
+                        "confusing authentication rejected"
                         % (auth_field, name))
-                    # But continue with the first
+                    return None
                 if password is not None:
                     id = res[0]
                     entry = dir.getEntryAuthenticated(id, password)
