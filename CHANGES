@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Fixed case of non-password user fetch with login field != id field.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
