@@ -1,0 +1,71 @@
+====================
+CPSUserFolder Design
+====================
+
+$Id$
+
+Introduction
+============
+
+CPSUserFolder is a user folder designed to work in conjunction with
+CPSDirectory and therefore CPSSchemas. Directories are used to describe
+what are the attributes of a user (using a schema) and where they are
+stored (depending on the type of directory). This is also used for roles
+and groups, so that for instance one can easily add additional
+properties to groups.
+
+Configuration
+=============
+
+When configuring a CPS User Folder, you have to specify a number of
+parameters:
+
+'users' directory
+  The directory that holds user properties.
+
+'roles' directory
+  The directory that holds all the roles information.
+
+'groups' directory
+  The directory that holds groups and subgroups information.
+
+In the 'users' directory, the id field will be used as the login name of
+a user. A specific password field can be used for explicit storage of
+the password in clear text or encrypted.
+
+Directories
+===========
+
+CPSUserFolder uses heavily the MetaDirectory and StackingDirectory of
+CPSDirectory. These directories provide a unified view of several other
+directories, and dispatch requests accordingly. They can also convert
+attribute names.
+
+The main uses of MetaDirectory in CPSUserFolder are:
+
+- storing some attributes in one directory (LDAP) and others attributes
+  in another directory (ZODB),
+
+- providing a different view on a directory (ex: LDAP, whose id field is
+  the dn, seen as standard directory whose id field is an uid),
+
+- renaming fields (ex: the 'email' field of the directory 'users'
+  actually comes from the 'mail' field of the directory 'users_storage'),
+
+- providing cross-references (ex: the 'groups' attribute of the 'users'
+  directory is cross-referenced to the 'users' attribute of the 'groups'
+  directory).
+
+The main use of StackingDirectory in CPSUserFolder is:
+
+- having some users stored in one directory and others in another
+  directory (ex: aggregation of two LDAP branche).
+
+Memberdata Tool
+===============
+
+In standard CMF, the memberdata tool exists to hold additional
+information about users that cannot be stored in the user folder. With
+CPSUserFolder, it's no longer necessary as a MetaDirectory can be used
+to dispatch some attributes into the standard storage, and additional
+attributes (login_time, last_login_time, etc.).
