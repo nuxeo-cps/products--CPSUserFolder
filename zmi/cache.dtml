@@ -1,0 +1,36 @@
+<dtml-var manage_page_header>
+<dtml-let management_view="'Cache'">
+<dtml-var manage_tabs>
+</dtml-let>
+
+<h2>Cache</h2>
+
+<p class="form-help">
+  The following users are currently in cache for this Zope instance.
+</p>
+
+<dtml-if getCacheKeysWithValidity>
+  <table>
+    <tr>
+      <td style="border-bottom: solid 1px"><b>User id</b></td>
+      <td>&nbsp;</td>
+    </tr>
+    <dtml-in getCacheKeysWithValidity>
+      <tr>
+        <td>&dtml-sequence-key;</td>
+        <td><dtml-if sequence-item>&nbsp;<dtml-else>Expired</dtml-if></td>
+      </tr>
+    </dtml-in>
+  </table>
+  <form action="manage_purgeUserCache" method="post">
+    <input type="submit" value="Purge user cache" />
+  </form>
+<dtml-else>
+  <p class="form-help">
+    The cache is empty.
+  </p>
+</dtml-if>
+
+
+
+<dtml-var manage_page_footer>

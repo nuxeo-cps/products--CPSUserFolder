@@ -22,13 +22,14 @@ CPSUserFolder
 A user folder based on CPSDirectory and CPSSchemas.
 """
 
-from zLOG import LOG, DEBUG, WARNING, ERROR
+from zLOG import LOG, DEBUG, WARNING, ERROR, TRACE
 
 from types import ListType
 import base64
 
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass
+from Globals import DTMLFile
 
 from AccessControl import ClassSecurityInfo
 from AccessControl.User import BasicUser, BasicUserFolder
@@ -38,13 +39,16 @@ from AccessControl.PermissionRole import _what_not_even_god_should_do
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
+from Products.CMFCore.permissions import ManagePortal
 from Products.CPSSchemas.PropertiesPostProcessor import PropertiesPostProcessor
 
 from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 
+from Products.CPSUserFolder import TimeoutCache
+
 
 _marker = []
-cache_key = '_cps_user_folder_cache'
+CACHE_KEY = 'CPSUserFolder'
 
 
 def _isinstance(ob, cls):
@@ -67,6 +71,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     field, which is whatever id the user will have once it's logged in.
 
     However the 'username' and the 'id' are still identical.
+
+    Several internal caches are used:
+      login -> id
+        there may be several of those when several logins exist
+      id -> user, password
+        the password may be None if no password has yet been checked
     """
     meta_type = 'CPSUserFolder'
     id = 'acl_users'
@@ -91,6 +101,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Users directory: groups field"},
         {'id': 'groups_dir', 'type': 'string', 'mode': 'w',
          'label': "Groups directory"},
+        {'id': 'cache_timeout', 'type': 'int', 'mode': 'w',
+         'label': "Cache timeout"},
         )
     users_dir = 'members'
     users_login_field = ''
@@ -98,8 +110,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     users_roles_field = 'roles'
     users_groups_field = 'groups'
     groups_dir = 'groups'
+    cache_timeout = 300
 
-    manage_options = SimpleItemWithProperties.manage_options
+    manage_options = (
+        SimpleItemWithProperties.manage_options[:1] +
+        ({'label': 'Cache', 'action':'manage_userCache'},) +
+        SimpleItemWithProperties.manage_options[1:]
+        )
 
     def __init__(self, **kw):
         self.manage_changeProperties(**kw)
@@ -122,9 +139,71 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if item is self:
             container.__allow_groups__ = aq_base(self)
 
+    def _postProcessProperties(self):
+        """Post-processing after properties change."""
+        PropertiesPostProcessor._postProcessProperties(self)
+        self._setCacheTimeout(self.cache_timeout)
+
+    #
+    # Caching
+    #
+
+    def _getCache(self, which):
+        cache_key = (CACHE_KEY, self.getPhysicalPath(), which)
+        return TimeoutCache.getCache(cache_key,
+                                     constructor=self._makeNewCache)
+
+    def _makeNewCache(self):
+        return TimeoutCache.TimeoutCache(timeout=self.cache_timeout)
+
+    def _setCacheTimeout(self, timeout):
+        self._getCache('id').setTimeout(self.cache_timeout)
+        self._getCache('login').setTimeout(self.cache_timeout)
+
+    def _clearUserCache(self):
+        """Clear the user cache."""
+        self._getCache('id').clear()
+        self._getCache('login').clear()
+
+    def _removeUserIdFromCache(self, userid):
+        """Remove a user id from the cache."""
+        if userid is not None:
+            self._removeUserFromIdCache(userid)
+            self._removeUserIdFromLoginCache(userid)
+
+    # user cache
+
+    def _getUserFromIdCache(self, id):
+        """Maybe get a user from the cache."""
+        return self._getCache('id')[id]
+
+    def _setUserToIdCache(self, id, user):
+        """Cache a user."""
+        self._getCache('id')[id] = user
+
+    def _removeUserFromIdCache(self, id):
+        """Remove a user from the cache."""
+        del self._getCache('id')[id]
+
+    def _getCacheKeysWithValidity(self):
+        """Get cache keys with validity, for zmi page."""
+        return self._getCache('id').keysWithValidity()
+
+    # login cache
+
+    def _getUserIdFromLoginCache(self, name):
+        return self._getCache('login')[name]
+
+    def _setUserIdToLoginCache(self, name, id):
+        self._getCache('login')[name] = id
+
+    def _removeUserIdFromLoginCache(self, id):
+        self._getCache('login').delValues(id)
+
     #
     # Internal methods
     #
+
     security.declarePrivate('_getGroupsDirectory')
     def _getGroupsDirectory(self):
         """Get the underlying users directory."""
@@ -155,55 +234,6 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             dir = None
         return dir
 
-    def _getUserFromCache(self, key):
-        """Maybe get a user from the cache.
-
-        Returns the unwrapped user or None.
-        """
-        request = getattr(self, 'REQUEST', None)
-        if request is None:
-            return None
-        cache = getattr(request, cache_key, None)
-        if cache is None:
-            return None
-        return cache.get(key)
-
-    def _setUserToCache(self, key, user):
-        """Cache a user."""
-        request = getattr(self, 'REQUEST', None)
-        if request is None:
-            return
-        if not hasattr(request, cache_key):
-            setattr(request, cache_key, {})
-        cache = getattr(request, cache_key)
-        user._key_in_user_cache = key # To be able to remove it
-        cache[key] = user
-
-    def _clearUserCache(self):
-        """Clear the user cache."""
-        request = getattr(self, 'REQUEST', None)
-        if request is None:
-            return
-        cache = getattr(request, cache_key, None)
-        if cache is None:
-            return
-        delattr(request, cache_key)
-
-    def _removeUserFromCache(self, user):
-        """Remove a user from the cache."""
-        key = getattr(user, '_key_in_user_cache', None)
-        if key is None:
-            return
-        request = getattr(self, 'REQUEST', None)
-        if request is None:
-            return
-        cache = getattr(request, cache_key, None)
-        if cache is None:
-            return
-        if not cache.has_key(key):
-            return
-        del cache[key]
-
     security.declarePrivate('_buildUser')
     def _buildUser(self, id, roles, groups, entry, dir, password):
         """Build a user object from information."""
@@ -227,14 +257,47 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             # Avoid passing an empty search to some backends.
             return None
 
-        # Check cache
-        user = self._getUserFromCache((name, password, not not use_login))
-        if user is not None:
-            return user
-
         dir = self._getUsersDirectory()
         if dir is None:
             return None
+        dir_id_field = dir.id_field
+
+        # Find on which field identification is done
+        if use_login:
+            auth_field = self.users_login_field
+            if not auth_field:
+                auth_field = dir_id_field
+        else:
+            auth_field = dir_id_field
+
+        # Check cache for userid
+        if auth_field == dir_id_field:
+            userid = name
+        else:
+            userid = self._getUserIdFromLoginCache(name)
+            if userid is not None:
+                LOG('getUserWithAuthentication', TRACE,
+                    "Getting info from cache name=%s -> userid=%s"
+                    % (name, userid))
+
+        # Check cache for user
+        user_is_from_cache = False
+        if userid is not None:
+            cached_user = self._getUserFromIdCache(userid)
+            if cached_user is not None:
+                user_is_from_cache = True
+                user, cache_pw = cached_user
+                if password is None or password == cache_pw:
+                    LOG('getUserWithAuthentication', TRACE,
+                        "Returning user %s from cache" % userid)
+                    return user
+                elif cache_pw is not None:
+                    # Incorrect password, purge from cache
+                    LOG('getUserWithAuthentication', DEBUG,
+                        "Incorrect password for cached user" % userid)
+                    self._removeUserIdFromCache(userid)
+                    userid = None
+
         try:
             if password is not None and not dir.isAuthenticating():
                 LOG('getUserWithAuthentication', ERROR,
@@ -246,21 +309,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 (e.__class__.__name__, e, dir.getId()))
             return None
 
-        # Find on which field identification is done
-        if use_login:
-            auth_field = self.users_login_field
-            if not auth_field:
-                auth_field = dir.id_field
-        else:
-            auth_field = dir.id_field
-
         # Get entry authenticated
+        entry = None
         try:
-            if auth_field == dir.id_field:
+            if userid is not None:
                 if password is not None:
-                    entry = dir.getEntryAuthenticated(name, password)
+                    entry = dir.getEntryAuthenticated(userid, password)
                 else:
-                    entry = dir._getEntry(name)
+                    entry = dir._getEntry(userid)
             else:
                 if password is not None:
                     # We'll have to refetch the entry authenticated.
@@ -271,8 +327,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 res = dir._searchEntries(return_fields=return_fields,
                                         **{auth_field: [name]})
                 if not res:
-                    LOG('getUserWithAuthentication', DEBUG,
+                    LOG('getUserWithAuthentication', TRACE,
                         "No result for %s=%s" % (auth_field, name))
+                    # XXX do negative cache for login
                     return None
                 if len(res) > 1:
                     LOG('getUserWithAuthentication', ERROR,
@@ -282,22 +339,30 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     return None
                 if password is not None:
                     # Refetch the entry authenticated.
-                    id = res[0]
-                    entry = dir.getEntryAuthenticated(id, password)
+                    userid = res[0]
+                    entry = dir.getEntryAuthenticated(userid, password)
                 else:
-                    # Get the entry that the search returned.
-                    id, entry = res[0]
+                    # Use the entry that the search returned.
+                    userid, entry = res[0]
         except AuthenticationFailed:
-            return None
+            LOG('getUserWithAuthentication', TRACE,
+                "Authentication failed for user %s" % userid)
+            entry = None
         except KeyError:
-            return None
+            LOG('getUserWithAuthentication', DEBUG,
+                "KeyError for user %s" % userid)
+            entry = None
         except ValueError, e:
             LOG('getUserWithAuthentication', ERROR,
                 "Got %s(%s) while authenticating %s" %
                 (e.__class__.__name__, e, name))
+            entry = None
+        if entry is None:
+            self._removeUserIdFromCache(userid)
             return None
 
-        id = entry[dir.id_field]
+        # Build user
+        #id = entry[dir_id_field] # XXX
         roles = entry[self.users_roles_field]
         groups = entry[self.users_groups_field]
         if password is None:
@@ -305,10 +370,16 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             if self.users_password_field <> '':
                 password = entry[self.users_password_field]
 
-        user = self._buildUser(id, roles, groups, entry, dir, password)
+        user = self._buildUser(userid, roles, groups, entry, dir, password)
 
         # Set to cache
-        self._setUserToCache((name, password, not not use_login), user)
+        # (the cache keeps existing timeouts)
+        if auth_field != dir_id_field:
+            self._setUserIdToLoginCache(name, userid)
+        self._setUserToIdCache(userid, (user, password))
+        LOG('getUserWithAuthentication', DEBUG,
+            "Setting user %s into cache" % userid)
+
         return user
 
     security.declareProtected(ManageUsers, 'getUser')
@@ -658,6 +729,25 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     # old spelling
     _getAllowedRolesAndUsers = getAllowedRolesAndUsersOfUser
 
+    #
+    # ZMI
+    #
+
+    security.declareProtected(ManagePortal, 'manage_userCache')
+    manage_userCache = DTMLFile('zmi/cache', globals())
+
+    security.declareProtected(ManagePortal, 'manage_purgeUserCache')
+    def manage_purgeUserCache(self, REQUEST):
+        """Purge user cache."""
+        self._clearUserCache()
+        REQUEST.RESPONSE.redirect(self.absolute_url()+'/manage_userCache'
+                                  '?manage_tabs_message=Cache+Purged.')
+
+    security.declareProtected(ManagePortal, 'getCacheKeysWithValidity')
+    def getCacheKeysWithValidity(self):
+        """Get cache keys with validity."""
+        return self._getCacheKeysWithValidity()
+
 InitializeClass(CPSUserFolder)
 
 
@@ -759,7 +849,7 @@ class CPSUser(BasicUser):
         aclu = self._aclu
 
         # Remove the user from the cache
-        aclu._removeUserFromCache(self)
+        aclu._removeUserIdFromCache(id)
 
         # Set the properties
         kw[dir.id_field] = id

@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Implemented user cache, with configurable timeout.
 Bug fixes:
 ~~~~~~~~~~
 -
