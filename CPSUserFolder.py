@@ -135,7 +135,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             dir = None
         return dir
 
-    def _getUserFromCache(self, name, password):
+    def _getUserFromCache(self, key):
         """Maybe get a user from the cache.
 
         Returns the unwrapped user or None.
@@ -146,9 +146,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         cache = getattr(request, cache_key, None)
         if cache is None:
             return None
-        return cache.get((name, password))
+        return cache.get(key)
 
-    def _setUserToCache(self, name, password, user):
+    def _setUserToCache(self, key, user):
         """Cache a user."""
         request = getattr(self, 'REQUEST', None)
         if request is None:
@@ -156,21 +156,39 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if not hasattr(request, cache_key):
             setattr(request, cache_key, {})
         cache = getattr(request, cache_key)
-        cache[(name, password)] = user
+        user._key_in_user_cache = key # To be able to remove it
+        cache[key] = user
 
     def _clearUserCache(self):
         """Clear the user cache."""
-        # Not really needed as we cache in request.
         request = getattr(self, 'REQUEST', None)
         if request is None:
             return
-        if hasattr(request, cache_key):
-            delattr(request, cache_key)
+        cache = getattr(request, cache_key, None)
+        if cache is None:
+            return
+        delattr(request, cache_key)
+
+    def _removeUserFromCache(self, user):
+        """Remove a user from the cache."""
+        key = getattr(user, '_key_in_user_cache', None)
+        if key is None:
+            return
+        request = getattr(self, 'REQUEST', None)
+        if request is None:
+            return
+        cache = getattr(request, cache_key, None)
+        if cache is None:
+            return
+        if not cache.has_key(key):
+            return
+        del cache[key]
 
     security.declarePrivate('_buildUser')
     def _buildUser(self, id, roles, groups, entry, dir):
         """Build a user object from information."""
-        return CPSUser(id, roles, groups, entry, dir)
+        aclu = self
+        return CPSUser(id, roles, groups, entry, dir, aclu)
 
     #
     # Public UserFolder object interface
@@ -190,7 +208,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             return None
 
         # Check cache
-        user = self._getUserFromCache(name, password)
+        user = self._getUserFromCache((name, password, not not use_login))
         if user is not None:
             return user
 
@@ -259,7 +277,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         user = self._buildUser(id, roles, groups, entry, dir)
 
         # Set to cache
-        self._setUserToCache(name, password, user)
+        self._setUserToCache((name, password, not not use_login), user)
         return user
 
     security.declareProtected(ManageUsers, 'getUser')
@@ -346,6 +364,17 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if hasattr(self, '_doDelUsers'):
             return self._doDelUsers(names)
         raise NotImplementedError
+
+    security.declarePrivate('searchEntries')
+    def searchEntries(self, return_fields=None, **kw):
+        """Search for entries in the user directory.
+
+        API is that of BaseDirectory.searchEntries.
+        """
+        dir = self._getUsersDirectory()
+        if dir is None:
+            return []
+        return dir.searchEntries(return_fields=return_fields, **kw)
 
     # CPS Public extensions
 
@@ -583,12 +612,13 @@ class CPSUser(BasicUser):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    def __init__(self, id, roles, groups, entry, dir):
+    def __init__(self, id, roles, groups, entry, dir, aclu):
         self._id = id
         self._roles = tuple(roles) + ('Anonymous', 'Authenticated')
         self._groups = tuple(groups)
         self._entry = entry
         self._dir = dir
+        self._aclu = aclu
 
     #
     # Basic API
@@ -649,6 +679,30 @@ class CPSUser(BasicUser):
         if _isinstance(value, ListType):
             value = value[:]
         return value
+
+    # CPS extension
+    security.declarePublic('setProperties')
+    def setProperties(self, **kw):
+        """Set the value of properties for the user."""
+        id = self._id
+        dir = self._dir
+        aclu = self._aclu
+
+        # Remove the user from the cache
+        aclu._removeUserFromCache(self)
+
+        # Set the properties
+        kw[dir.id_field] = id
+        dir.editEntry(kw)
+
+        # Now update this object to make it correspond to the new user.
+        user = aclu.getUserById(id)
+
+        LOG('setProperties', DEBUG, 'old entry = %s' % self._entry)
+        self._roles = user._roles
+        self._groups = user._groups
+        self._entry = user._entry
+        LOG('setProperties', DEBUG, '    entry = %s' % user._entry)
 
     #
     # Internal API

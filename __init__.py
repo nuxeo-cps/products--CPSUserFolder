@@ -18,8 +18,11 @@
 # $Id$
 
 from AccessControl.Permissions import add_user_folders as AddUserFolders
+from Products.CMFCore.CMFCorePermissions import ManagePortal
 
-from Products.CPSUserFolder import CPSUserFolder
+
+import CPSUserFolder
+import CPSMemberDataTool
 
 def initialize(registrar):
     registrar.registerClass(
@@ -27,3 +30,8 @@ def initialize(registrar):
         permission=AddUserFolders,
         constructors=(CPSUserFolder.addCPSUserFolder,),
         icon='zmi/cpsuserfolder_icon.gif')
+    registrar.registerClass(
+        CPSMemberDataTool.CPSMemberDataTool,
+        permission=ManagePortal,
+        constructors=(CPSMemberDataTool.addCPSMemberDataTool,),
+        icon='zmi/tool.gif')
