@@ -90,6 +90,35 @@ class CPSUserFolderTests(CPSUserFolderTestCase.CPSUserFolderTestCase):
         self.assertRaises(KeyError, aclu.getUserById, 'toto')
 
         resetAllCaches()
+
+    def test_userFolderGroupsAPI(self):
+
+        # test UF groups API
+
+        resetAllCaches()
+
+        self.login('manager')
+
+        portal = self.getPortal()
+        aclu = self.portal.acl_users
+
+        dtool = getToolByName(portal, 'portal_directories')
+        users_dir = dtool.members
+        groups_dir = dtool.groups
+
+        # create a new group entry using the dir
+        new_entry = {'group': 'nuxeo', 'members': ('julien',), 'subgroups': ()}
+        groups_dir.createEntry(new_entry)
+
+        # Check the availibility through the aclu
+        group = aclu.getGroupById('nuxeo')
+        self.assertEqual(group.getUsers(), ('julien',))
+
+        # Try to get a non existing entry
+        group = aclu.getGroupById('fake', None)
+        self.assertEqual(group, None)
+
+        resetAllCaches()
         
 def test_suite():
     suite = unittest.TestSuite()
