@@ -66,7 +66,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     Several internal caches are used:
       login -> id
         there may be several of those when several logins exist
-      id -> user, password
+      id -> user_info = {'password', 'roles', 'groups', 'entry'}
         the password may be None if no password has yet been checked
     """
     meta_type = 'CPSUserFolder'
@@ -236,10 +236,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         return dir
 
     security.declarePrivate('_buildUser')
-    def _buildUser(self, id, roles, groups, entry, dir, password):
+    def _buildUser(self, id, user_info):
         """Build a user object from information."""
-        aclu = self
-        return CPSUser(id, roles, groups, entry, dir, aclu, password)
+        user = CPSUser(id, **user_info)
+        # The user folder is a persistent reference, it must not be cached,
+        # so it's not part of the normal user_info.
+        user._setUserFolder(self)
+        return user
 
     #
     # Public UserFolder object interface
@@ -284,18 +287,15 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         # Check cache for user
         user_is_from_cache = False
         if userid is not None:
-            cached_user = self._getUserFromIdCache(userid)
-            if cached_user is not None:
+            user_info = self._getUserFromIdCache(userid)
+            if user_info is not None:
                 user_is_from_cache = True
-                user, cache_pw = cached_user
+                cache_pw = user_info['password']
                 if password is None or password == cache_pw:
                     LOG('getUserWithAuthentication', TRACE,
                         "Returning user %s from cache" % userid)
-                    # Ensure this user's persistent references are not from a
-                    # foreign connection
-                    # XXX but when multithreaded there are still problems
-                    user._aclu = self
-                    user._dir = dir
+                    # Build a new user object from cache info
+                    user = self._buildUser(userid, user_info)
                     return user
                 elif cache_pw is not None:
                     # Incorrect password, purge from cache
@@ -373,16 +373,21 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         groups = entry[self.users_groups_field]
         if password is None:
             # XXX no raise if users_password_field has not be set
-            if self.users_password_field <> '':
+            if self.users_password_field != '':
                 password = entry[self.users_password_field]
-
-        user = self._buildUser(userid, roles, groups, entry, dir, password)
+        user = self._buildUser(userid, {
+            'password': password,
+            'roles': roles,
+            'groups': groups,
+            'entry': entry,
+            })
+        user_info = user._getInitUserInfo()
 
         # Set to cache
         # (the cache keeps existing timeouts)
         if auth_field != dir_id_field:
             self._setUserIdToLoginCache(name, userid)
-        self._setUserToIdCache(userid, (user, password))
+        self._setUserToIdCache(userid, user_info)
         LOG('getUserWithAuthentication', DEBUG,
             "Setting user %s into cache" % userid)
 
@@ -426,82 +431,63 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         raise KeyError(id)
 
     security.declarePrivate('_doAddUser')
-    def _doAddUser(self, name, password, roles, domains, **kw):
-        """Create a new user. This should be implemented by subclasses to
-           do the actual adding of a user. The 'password' will be the
-           original input password, unencrypted. The implementation of this
-           method is responsible for performing any needed encryption."""
-        users_dir = self._getUsersDirectory()
-        if users_dir is not None:
-            new_entry = {
-                users_dir.id_field : name,
-                self.users_password_field : password,
-                self.users_roles_field : roles,
-                }
-            new_entry.update(kw)
-            return users_dir.createEntry(new_entry)
-        else:
-            raise ValueError, "The directory %s doesn't exist" % self.users_dir
+    def _doAddUser(self, name, password, roles, domains, groups=(), **kw):
+        """Create a new user."""
+        dir = self._getUsersDirectory()
+        if dir is None:
+            raise ValueError("The directory %s doesn't exist" % self.users_dir)
+        entry = kw
+        entry.update({
+            dir.id_field: name,
+            self.users_password_field: password,
+            self.users_roles_field: tuple(roles),
+            self.users_groups_field: tuple(groups),
+            })
+        dir.createEntry(entry)
 
     security.declarePrivate('_doChangeUser')
-    def _doChangeUser(self, name, password, roles, domains, **kw):
-        """Modify an existing user. This should be implemented by subclasses
-           to make the actual changes to a user. The 'password' will be the
-           original input password, unencrypted. The implementation of this
-           method is responsible for performing any needed encryption."""
-        users_dir = self._getUsersDirectory()
-        if users_dir is not None:
-            entry = {
-                users_dir.id_field : name,
-                self.users_password_field : password,
-                self.users_roles_field : roles,
-                }
-            entry.update(kw)
-            res = users_dir.editEntry(entry)
-            # invalidate cache for name
-            self._removeUserFromIdCache(name)
-            return res
-        else:
-            raise ValueError, "The directory %s doesn't exist" % self.users_dir
+    def _doChangeUser(self, name, password, roles, domains, groups=None, **kw):
+        """Modify an existing user."""
+        dir = self._getUsersDirectory()
+        if dir is None:
+            raise ValueError("The directory %s doesn't exist" % self.users_dir)
+        entry = kw
+        entry.update({
+            dir.id_field: name,
+            self.users_password_field: password,
+            self.users_roles_field: tuple(roles),
+            })
+        if groups is not None:
+            entry[self.users_groups_field] = tuple(groups)
+        dir.editEntry(entry)
+        # Invalidate cache for name.
+        self._removeUserFromIdCache(name)
 
     security.declarePrivate('_doDelUsers')
     def _doDelUsers(self, names):
-        """Delete one or more users. This should be implemented by subclasses
-           to do the actual deleting of users."""
-        users_dir = self._getUsersDirectory()
-        if users_dir is not None:
-            for name in names:
-                users_dir.deleteEntry(name)
-                # invalidate cache for name
-                self._removeUserFromIdCache(name)
-        else:
-            raise ValueError, "The directory %s doesn't exist" % self.users_dir
+        """Delete one or more users."""
+        dir = self._getUsersDirectory()
+        if dir is None:
+            raise ValueError("The directory %s doesn't exist" % self.users_dir)
+        for name in names:
+            dir.deleteEntry(name)
+            # Invalidate cache for name.
+            self._removeUserFromIdCache(name)
 
     security.declareProtected(ManageUsers, 'userFolderAddUser')
     def userFolderAddUser(self, name, password, roles, domains, **kw):
-        """API method for creating a new user object. Note that not all
-           user folder implementations support dynamic creation of user
-           objects."""
-        if hasattr(self, '_doAddUser'):
-            return self._doAddUser(name, password, roles, domains, **kw)
-        raise NotImplementedError
+        """Create a new user."""
+        return self._doAddUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderEditUser')
     def userFolderEditUser(self, name, password, roles, domains, **kw):
-        """API method for changing user object attributes. Note that not
-           all user folder implementations support changing of user object
-           attributes."""
-        if hasattr(self, '_doChangeUser'):
-            return self._doChangeUser(name, password, roles, domains, **kw)
-        raise NotImplementedError
+        """Modify an existing user."""
+        return self._doChangeUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderDelUsers')
     def userFolderDelUsers(self, names):
-        """API method for deleting one or more user objects. Note that not
-           all user folder implementations support deletion of user objects."""
-        if hasattr(self, '_doDelUsers'):
-            return self._doDelUsers(names)
-        raise NotImplementedError
+        """Delete one or more users."""
+        return self._doDelUsers(names)
 
     security.declarePrivate('searchEntries')
     def searchEntries(self, return_fields=None, **kw):
@@ -819,14 +805,35 @@ class CPSUser(BasicUser):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    def __init__(self, id, roles, groups, entry, dir, aclu, password):
+    def __init__(self, id, password=None, roles=(), groups=(), entry=None):
         self._id = id
-        self._roles = tuple(roles) + ('Anonymous', 'Authenticated')
+        self._password = password
+        roles = tuple(roles)
+        if 'Anonymous' not in roles:
+            roles += ('Anonymous',)
+        if 'Authenticated' not in roles:
+            roles += ('Authenticated',)
+        self._roles = roles
         self._groups = tuple(groups)
         self._entry = entry
-        self._dir = dir
+
+    def _getInitUserInfo(self):
+        """Get the arguments needed to build a new user object."""
+        roles = list(self._roles)
+        roles.remove('Anonymous')
+        roles.remove('Authenticated')
+        roles = tuple(roles)
+        return {
+            'password': self._password,
+            'roles': self._roles,
+            'groups': self._groups,
+            'entry': self._entry,
+            }
+
+    def _setUserFolder(self, aclu):
+        """Set the persistent reference to the user folder."""
         self._aclu = aclu
-        self._password = password
+
     #
     # Basic API
     #
@@ -892,8 +899,8 @@ class CPSUser(BasicUser):
     def setProperties(self, **kw):
         """Set the value of properties for the user."""
         id = self._id
-        dir = self._dir
         aclu = self._aclu
+        dir = aclu._getUsersDirectory()
 
         # Remove the user from the cache
         aclu._removeUserIdFromCache(id)
