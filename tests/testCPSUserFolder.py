@@ -21,28 +21,36 @@ import os, sys
 if __name__ == '__main__':
     execfile(os.path.join(sys.path[0], 'framework.py'))
 
+from unittest import TestSuite, makeSuite
 from Testing import ZopeTestCase
+from CPSUserFolderTestCase import CPSUserFolderTestCase
 
 ZopeTestCase.installProduct('CPSSchemas')
 ZopeTestCase.installProduct('CPSDirectory')
 ZopeTestCase.installProduct('CPSUserFolder')
 
+from Interface import Interface
+from Interface.Verify import verifyObject, verifyClass
 
-class TestCPSUserFolder(ZopeTestCase.ZopeTestCase):
+#from AccessControl.IUserFolder import IStandardUserFolder
+    
 
-    def afterSetUp(self):
-        pass
+# TODO: fix AccessControl.IUserFolder instead
+class IStandardUserFolder(Interface):
+    def getUser(name): pass
+    def getUsers(): pass
+    def getUserNames(): pass
 
-    def testSomething(self):
-        # Test something
-        self.assertEqual(1+1, 2)
+class TestCPSUserFolder(CPSUserFolderTestCase):
+    def testInterface(self):
+        from Products.CPSUserFolder.CPSUserFolder import CPSUserFolder
+
+        # TODO: remove 'tentative=1' after putting __implements__ in
+        # CPSUserFolder class
+        verifyClass(IStandardUserFolder, CPSUserFolder, tentative=1)
 
 
-if __name__ == '__main__':
-    framework()
-else:
-    from unittest import TestSuite, makeSuite
-    def test_suite():
-        suite = TestSuite()
-        suite.addTest(makeSuite(TestCPSUserFolder))
-        return suite
+def test_suite():
+    suite = TestSuite()
+    suite.addTest(makeSuite(TestCPSUserFolder))
+    return suite
