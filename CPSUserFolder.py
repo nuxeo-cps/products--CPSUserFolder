@@ -411,8 +411,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         dir = self._getGroupsDirectory()
         if dir is None:
             return []
-        else:
-            return dir.listEntryIds()
+        return dir.listEntryIds()
 
     security.declareProtected(ManageUsers, 'getGroupById')
     def getGroupById(self, groupname):
