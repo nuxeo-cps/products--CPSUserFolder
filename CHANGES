@@ -9,4 +9,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- Small speed improvement in local roles computation.
+
