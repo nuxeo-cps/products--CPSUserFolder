@@ -1,9 +1,9 @@
 Requires:
 ~~~~~~~~~
-- require CPSDirectory >= 1.11.0
+-
 New features:
 ~~~~~~~~~~~~~
-- Initial version.
+-
 Bug fixes:
 ~~~~~~~~~~
 -
