@@ -22,7 +22,7 @@ from zLOG import LOG, INFO, ERROR
 from AccessControl.Permissions import add_user_folders as AddUserFolders
 from Products.CMFCore.CMFCorePermissions import ManagePortal
 
-import UserFolderWithGroups # contains monkey patches
+from UserFolderWithGroups import UserFolderWithGroups, addUserFolderWithGroups
 
 # Make a fake NuxUserGroups module to provide backward compatibility
 # to previous persistent class from the old module.
@@ -52,3 +52,8 @@ def initialize(registrar):
         permission=ManagePortal,
         constructors=(CPSMemberDataTool.addCPSMemberDataTool,),
         icon='zmi/tool.gif')
+    registrar.registerClass(
+        UserFolderWithGroups,
+        permission=AddUserFolders,
+        constructors=(addUserFolderWithGroups,),
+        icon='zmi/userfolder_icon.gif')
