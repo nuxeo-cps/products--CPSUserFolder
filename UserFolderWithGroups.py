@@ -604,19 +604,29 @@ class UserFolderWithGroups(UserFolder):
 
     security.declarePublic('hasLocalRolesBlocking')
     def hasLocalRolesBlocking(self):
-        """Is local roles blocking implemented in this user folder."""
-        return 1
+        """Test if local roles blocking is implemented in this user folder.
+
+        0 means no
+        1 means supports 'group:role:Anonymous' -> '-'
+        2 means supports 'group:role:Anonymous' -> '-SomeRole'
+        """
+        return 2
 
     security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0):
-        """
-        Return a merging of object and its ancestors' __ac_local_roles__.
-        When called with withgroups=1, the keys are
-        of the form user:foo and group:bar.
+        """Get the merged local roles of an object.
+
+        Returns a dictionnary, with users as keys and roles as values.
+
+        When called with withgroups=1, the keys are of the form user:foo and
+        group:bar.
         """
         merged = {}
         object = aq_inner(object)
         stop_loop = 0
+        blocked = {'': None}
+        isblocked = blocked.has_key
+        # this '' blocked role is to avoid testing before doing r[0]
         while 1:
             if hasattr(object, '__ac_local_roles__'):
                 dict = object.__ac_local_roles__ or {}
@@ -625,8 +635,9 @@ class UserFolderWithGroups(UserFolder):
                 for k, v in dict.items():
                     if withgroups:
                         k = 'user:'+k # groups
-                    # Skip blocking roles
-                    v = [r for r in v if r and r[0] != '-']
+                    # Skip blocked roles
+                    v = [r for r in v
+                         if not isblocked(r) and r[0] != '-']
                     if merged.has_key(k):
                         merged[k] = merged[k] + v
                     elif v:
@@ -637,17 +648,24 @@ class UserFolderWithGroups(UserFolder):
                     dict = object.__ac_local_group_roles__ or {}
                     if callable(dict):
                         dict = dict()
-                    for k, v in dict.items():
+                    for k, vv in dict.items():
                         k = 'group:'+k
-                        # Blocking, simplest case: everyone is blocked.
-                        if k == 'group:role:Anonymous' and '-' in v:
-                            stop_loop = 1
-                        # Skip blocking roles
-                        v = [r for r in v if r and r[0] != '-']
+                        # Skip blocked roles
+                        v = [r for r in vv
+                             if not isblocked(r) and r[0] != '-']
                         if merged.has_key(k):
                             merged[k] = merged[k] + v
                         elif v:
                             merged[k] = v
+                        # Blocking for all users
+                        if k == 'group:role:Anonymous':
+                            for r in vv:
+                                if r and r[0] == '-':
+                                    if r == '-':
+                                        stop_loop = 1
+                                        break
+                                    else:
+                                        blocked[r[1:]] = None
                     if stop_loop:
                         break
             # end groups
