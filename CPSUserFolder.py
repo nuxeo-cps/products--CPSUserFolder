@@ -232,9 +232,15 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         dir = self._getUsersDirectory()
         if dir is None:
             return None
-        if password is not None and not dir.isAuthenticating():
+        try:
+            if password is not None and not dir.isAuthenticating():
+                LOG('getUserWithAuthentication', ERROR,
+                    "Directory %s is not authenticating" % dir.getId())
+                return None
+        except ValueError, e:
             LOG('getUserWithAuthentication', ERROR,
-                "Directory %s is not authenticating" % dir.getId())
+                "Got %s(%s) while calling isAuthenticating on %s" %
+                (e.__class__.__name__, e, dir.getId()))
             return None
 
         # Find on which field identification is done
