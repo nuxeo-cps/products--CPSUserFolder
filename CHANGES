@@ -9,5 +9,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- It is now possibile to do authentication through a login field different
-  than the id field.
+-
