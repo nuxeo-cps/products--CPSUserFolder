@@ -133,6 +133,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     def _postProcessProperties(self):
         """Post-processing after properties change."""
         PropertiesPostProcessor._postProcessProperties(self)
+        # XXX this will only change this instance's cache
         self._setCacheTimeout(self.cache_timeout)
 
     #
