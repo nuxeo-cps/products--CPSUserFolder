@@ -496,6 +496,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         """
         return 2
 
+    security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0):
         """Get the merged local roles of an object.
 
@@ -561,6 +562,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             break
         return merged
 
+    security.declarePrivate('mergedLocalRolesWithPath')
     def mergedLocalRolesWithPath(self, object, withgroups=0):
         """Get the merged local roles of an object.
 
