@@ -10,4 +10,4 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - Small speed improvement in local roles computation.
-
+- Log a better message when a subclass of ValueErorr is caught.
