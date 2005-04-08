@@ -37,6 +37,7 @@ from Acquisition import Implicit
 from Acquisition import aq_base, aq_parent, aq_inner
 
 from AccessControl.Role import RoleManager
+from AccessControl.Role import DEFAULTMAXLISTUSERS
 from AccessControl.User import BasicUser
 from AccessControl.User import UserFolder
 from AccessControl.User import reqattr
