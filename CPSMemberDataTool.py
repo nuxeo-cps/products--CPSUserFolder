@@ -197,15 +197,17 @@ class CPSMemberData(SimpleItem):
     def setSecurityProfile(self, password=None, roles=None, domains=None):
         """Set the user's basic security profile"""
         raise NotImplementedError
-        u = self.getUser()
-        # This is really hackish.  The Zope User API needs methods
-        # for performing these functions.
-        if password is not None:
-            u.__ = password
-        if roles is not None:
-            u.roles = roles
-        if domains is not None:
-            u.domains = domains
+
+        # FIXME: remove this useless code.
+        #u = self.getUser()
+        ## This is really hackish.  The Zope User API needs methods
+        ## for performing these functions.
+        #if password is not None:
+        #    u.__ = password
+        #if roles is not None:
+        #    u.roles = roles
+        #if domains is not None:
+        #    u.domains = domains
 
     security.declarePublic('getUser')
     def getUser(self):
