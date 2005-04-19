@@ -354,9 +354,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             LOG('getUserWithAuthentication', TRACE,
                 "Authentication failed for user %s" % userid)
             entry = None
-        except KeyError:
+        except KeyError, e:
             LOG('getUserWithAuthentication', DEBUG,
-                "KeyError for user %s" % userid)
+                "KeyError (%s) for user %s" % (e, userid))
             entry = None
         except ValueError, e:
             LOG('getUserWithAuthentication', ERROR,
@@ -369,12 +369,27 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
         # Build user
         #id = entry[dir_id_field] # XXX
-        roles = entry[self.users_roles_field]
-        groups = entry[self.users_groups_field]
+        try:
+            roles = entry[self.users_roles_field]
+        except KeyError:
+            LOG('getUserWithAuthentication', DEBUG,
+                'User %s has no field %s' % (userid, self.users_roles_field))
+            roles = ()
+        try:
+            groups = entry[self.users_groups_field]
+        except KeyError:
+            LOG('getUserWithAuthentication', DEBUG,
+                'User %s has no field %s' % (userid, self.users_groups_field))
+            groups = ()
         if password is None:
             # XXX no raise if users_password_field has not be set
             if self.users_password_field != '':
-                password = entry[self.users_password_field]
+                try:
+                    password = entry[self.users_password_field]
+                except KeyError:
+                    LOG('getUserWithAuthentication', DEBUG,
+                        'User %s has no field %s' %
+                        (userid, self.users_password_field))
         user = self._buildUser(userid, {
             'password': password,
             'roles': roles,
