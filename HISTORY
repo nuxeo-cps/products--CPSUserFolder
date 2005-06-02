@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.7.2 [R1 build 2005/06/02-12:02 by fguillaume]
+** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 22123
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- Made core more robust if some keys are missing in the entry.
+- Better error message when authenticating.
+
+*******************************************
 ** CPSUserFolder V0.7.1 [R1 build 2005/03/07-16:13 by madarche]
 
 Requires:

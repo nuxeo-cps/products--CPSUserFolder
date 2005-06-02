@@ -9,5 +9,4 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
-- Made core more robust if some keys are missing in the entry.
-- Better error message when authenticating.
+-
