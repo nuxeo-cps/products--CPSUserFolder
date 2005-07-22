@@ -1,6 +1,6 @@
 Requires:
 ~~~~~~~~~
--
+- CPSUtil > 0.5.3
 New features:
 ~~~~~~~~~~~~~
 -

@@ -40,7 +40,7 @@ from AccessControl.PermissionRole import _what_not_even_god_should_do
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.permissions import ManagePortal
-from Products.CPSSchemas.PropertiesPostProcessor import PropertiesPostProcessor
+from Products.CPSUtil.PropertiesPostProcessor import PropertiesPostProcessor
 
 from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 
