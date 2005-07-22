@@ -553,27 +553,20 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     # Private UserFolder object interface
     #
 
-##     def identify(self, auth):
-##         """Identify a user.
+    def identify(self, auth):
+        """Add certificate based authentication (cf SecureAuth)
+        """
+        if auth and auth.lower().startswith('clcert '):
+            name = base64.decodestring(auth.split(' ')[-1])
+            password = None
+            return name, password
+        else:
+            return BasicUserFolder.identify(self, auth)
 
-##         (Called by validate.)
-
-##         From 'auth' which comes from the request, identify the user.
-
-##         Returns its username and password, or (None, None).
-##         """
-##         if auth and auth.lower().startswith('basic '):
-##             try:
-##                 name, password = (base64.decodestring(auth.split(' ')[-1])
-##                                   .split(':', 1))
-##             except:
-##                 raise 'BadRequest', 'Invalid authentication token'
-##             return name, password
-##         else:
-##             return None, None
 
     def authenticate(self, name, password, request):
-        """Authenticate a user from a name and password.
+        """Authenticate a user from a name and password or a from
+        certificate (Apache and SecureAuth required)
 
         (Called by validate).
 
@@ -589,6 +582,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             else:
                 return None
         else:
+            if request._auth and request._auth.lower().startswith('clcert '):
+                # A certificate as been validated by an apache frontend: no
+                # password required
+                return self.getUserWithAuthentication(name, None, use_login=0)
             return self.getUserWithAuthentication(name, password, use_login=1)
 
     #def authorize(self, user, accessed, container, name, value, roles):
