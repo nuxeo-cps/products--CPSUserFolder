@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.8.0 [R1 build 2005/08/05-13:59 by ben]
+** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 25426
+Requires:
+~~~~~~~~~
+- CPSUtil > 0.5.3
+New features:
+~~~~~~~~~~~~~
+- SecureAuth support: added 'CLCert' check in the _auth variable for
+  certificate based authentication with Apache
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.7.2 [R1 build 2005/06/02-12:02 by fguillaume]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 22123
 Requires:

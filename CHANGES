@@ -1,10 +1,9 @@
 Requires:
 ~~~~~~~~~
-- CPSUtil > 0.5.3
+-
 New features:
 ~~~~~~~~~~~~~
-- SecureAuth support: added 'CLCert' check in the _auth variable for
-  certificate based authentication with Apache
+-
 Bug fixes:
 ~~~~~~~~~~
 -
