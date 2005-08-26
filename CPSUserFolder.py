@@ -544,6 +544,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     group_members = group_entry.get(self.groups_members_field,
                                                     ())
                     return Group(groupname, group_members)
+            else:
+                # Backward compatibility with UserFolderWithGroups for
+                # CPSSubscriptions.RecipientsRules (see ticket:890)
+                return Group(groupname, ())
             if default is not _marker:
                 return default
         else:

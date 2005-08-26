@@ -357,6 +357,10 @@ class TestCPSUserFolder(unittest.TestCase):
         group = aclu.getGroupById('fake', None)
         self.assertEquals(group, None)
 
+        # Backward compatibility with UserFolderWithGroups
+        group = aclu.getGroupById('role:Authenticated')
+        self.assertEquals(group.getUsers(), ())
+
     def test_user_not_shared(self):
         # Ensure that two requests for the same user return a different object.
         # This will avoid them being shared between threads, which causes

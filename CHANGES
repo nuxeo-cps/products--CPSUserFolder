@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #890 : backward compatibility for CPSUserFolder.getGroupById('role:*')
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
