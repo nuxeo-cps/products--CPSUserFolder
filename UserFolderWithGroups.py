@@ -27,6 +27,8 @@ to preserve backward compatibility.
 
 from zLOG import LOG, DEBUG, ERROR
 
+from copy import deepcopy
+
 from Globals import InitializeClass
 from Globals import DTMLFile
 from Globals import Persistent
@@ -677,7 +679,7 @@ class UserFolderWithGroups(UserFolder):
                 object = aq_inner(object.im_self)
                 continue
             break
-        return merged
+        return deepcopy(merged)
 
     security.declarePrivate('mergedLocalRolesWithPath')
     def mergedLocalRolesWithPath(self, object, withgroups=0):

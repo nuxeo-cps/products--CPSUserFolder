@@ -24,6 +24,7 @@ A user folder based on CPSDirectory and CPSSchemas.
 
 from zLOG import LOG, DEBUG, WARNING, ERROR, TRACE
 
+from copy import deepcopy
 from types import ListType
 import base64
 
@@ -678,7 +679,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 object = aq_inner(object.im_self)
                 continue
             break
-        return merged
+        return deepcopy(merged)
 
     security.declarePrivate('mergedLocalRolesWithPath')
     def mergedLocalRolesWithPath(self, object, withgroups=0):
@@ -731,7 +732,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 object = aq_inner(object.im_self)
                 continue
             break
-        return merged
+        return deepcopy(merged)
 
     security.declarePrivate('getAllowedRolesAndUsersOfObject')
     def getAllowedRolesAndUsersOfObject(self, ob):

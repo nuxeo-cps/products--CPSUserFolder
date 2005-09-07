@@ -7,6 +7,7 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - #890 : backward compatibility for CPSUserFolder.getGroupById('role:*')
+- #904 : Backport CMF fix for mergedLocalRoles
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
