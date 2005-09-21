@@ -1,4 +1,21 @@
 *******************************************
+** CPSUserFolder V0.8.1 [R1 build 2005/09/21-15:26 by fguillaume]
+** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 27306
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- #890 : backward compatibility for CPSUserFolder.getGroupById('role:*')
+- #904 : Backport CMF fix for mergedLocalRoles
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.8.0 [R1 build 2005/08/05-13:59 by ben]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 25426
 Requires:
