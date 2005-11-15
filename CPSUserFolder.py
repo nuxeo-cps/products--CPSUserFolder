@@ -457,7 +457,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             self.users_roles_field: tuple(roles),
             self.users_groups_field: tuple(groups),
             })
-        dir.createEntry(entry)
+        dir._createEntry(entry)
 
     security.declarePrivate('_doChangeUser')
     def _doChangeUser(self, name, password, roles, domains, groups=None, **kw):
@@ -473,7 +473,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             })
         if groups is not None:
             entry[self.users_groups_field] = tuple(groups)
-        dir.editEntry(entry)
+        dir._editEntry(entry)
         # Invalidate cache for name.
         self._removeUserFromIdCache(name)
 
@@ -484,7 +484,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if dir is None:
             raise ValueError("The directory %s doesn't exist" % self.users_dir)
         for name in names:
-            dir.deleteEntry(name)
+            dir._deleteEntry(name)
             # Invalidate cache for name.
             self._removeUserFromIdCache(name)
 
