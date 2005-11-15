@@ -55,10 +55,13 @@ class FakeDirectory(Folder):
         new = deepcopy(self.blank)
         new.update(entry)
         self.entries[entry[self.id_field]] = new
+    _createEntry = createEntry
     def editEntry(self, entry):
         self.entries[entry[self.id_field]].update(entry)
+    _editEntry = editEntry
     def deleteEntry(self, id):
         del self.entries[id]
+    _deleteEntry = deleteEntry
     def hasEntry(self, id):
         return self.entries.has_key(id)
     def listEntryIds(self):
