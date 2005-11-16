@@ -70,7 +70,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
       id -> user_info = {'password', 'roles', 'groups', 'entry'}
         the password may be None if no password has yet been checked
     """
-    meta_type = 'CPSUserFolder'
+    meta_type = 'CPS User Folder'
     id = 'acl_users'
     title = 'CPS User Folder'
 
