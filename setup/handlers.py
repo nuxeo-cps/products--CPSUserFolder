@@ -15,7 +15,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 #
-# $Id:$
+# $Id$
 """User folder import/export for CMFSetup.
 """
 
@@ -30,7 +30,7 @@ from Products.CMFCore.utils import getToolByName
 
 from Products.CMFSetup.utils import ExportConfiguratorBase
 from Products.CMFSetup.utils import ImportConfiguratorBase
-from Products.CMFSetup.utils import DEFAULT, KEY
+from Products.CMFSetup.utils import CONVERTER, DEFAULT, KEY
 
 _pkgdir = package_home(globals())
 _xmldir = os.path.join(_pkgdir, 'xml')
@@ -69,16 +69,37 @@ def importUserFolder(context):
     if uf_text is None:
         return "User Folder: nothing to import."
 
-    ufconf = PropertiesUserFolderImportConfigurator(site, encoding)
+    ufconf = UserFolderImportConfigurator(site, encoding)
     info = ufconf.parseXML(uf_text)
     ufconf.create(site, info)
 
     return "User Folder imported."
 
-ORIGINAL_USERFOLDER_API = [
-    'User Folder',
-    'User Folder With Groups',
-    ]
+##################################################
+# Exporters
+
+def exportOriginalAPI(configurator, aclu):
+    prop_infos = [{
+        'id': 'encrypt_passwords',
+        'value': bool(aclu.encrypt_passwords),
+        'elements': (),
+        'type': None,
+        'select_variable': None,
+        }, {
+        'id': 'maxlistusers',
+        'value': aclu.maxlistusers,
+        'elements': (),
+        'type': None,
+        'select_variable': None,
+        }]
+    return prop_infos, ''
+
+def exportProperties(configurator, aclu):
+    prop_infos = [configurator._extractProperty(aclu, prop_map)
+                  for prop_map in aclu._propertyMap()]
+    return prop_infos, ''
+
+_EXPORTERS = {}
 
 class PropertiesUserFolderExportConfigurator(ExportConfiguratorBase):
     """Export a CPS User Folder configuration.
@@ -107,80 +128,106 @@ class PropertiesUserFolderExportConfigurator(ExportConfiguratorBase):
     security.declareProtected(ManagePortal, 'getPropertiesXML')
     def getPropertiesXML(self):
         """Return info about the properties."""
-        object = self.object
-        if object.meta_type in ORIGINAL_USERFOLDER_API:
-            prop_infos = [{
-                'id': 'encrypt_passwords',
-                'value': bool(object.encrypt_passwords),
-                'elements': (),
-                'type': None,
-                'select_variable': None,
-                }, {
-                'id': 'maxlistusers',
-                'value': object.maxlistusers,
-                'elements': (),
-                'type': None,
-                'select_variable': None,
-                }]
-        else:
-            prop_infos = [self._extractProperty(object, prop_map)
-                          for prop_map in object._propertyMap()]
+        aclu = self.object
+        type = aclu.meta_type
+        exporter = _EXPORTERS.get(type)
+        if exporter is None:
+            raise ValueError("Unsupported user folder type: %r" % type)
+        prop_infos, otherXML = exporter(self, aclu)
         propsXML = self.generatePropertyNodes(prop_infos)
         propsXML = self.reindent(propsXML, '')
-        return propsXML
+        return propsXML+otherXML
 
 InitializeClass(PropertiesUserFolderExportConfigurator)
 
+##################################################
+# Importers
 
-class PropertiesUserFolderImportConfigurator(ImportConfiguratorBase):
+_IMPORTERS = {}
+
+def importOriginalAPI(configurator, aclu, info):
+    kw = {}
+    for prop_info in info['properties']:
+        id = prop_info['id']
+        value = prop_info['value']
+        if id == 'encrypt_passwords':
+            value = value in ('1', 'True')
+        kw[id] = value
+    if kw:
+        aclu.manage_setUserFolderProperties(**kw)
+
+def importProperties(configurator, aclu, info):
+    for prop_info in info['properties']:
+        configurator.initProperty(aclu, prop_info)
+    if getattr(aq_base(aclu), '_postProcessProperties', None) is not None:
+        aclu._postProcessProperties()
+
+
+class UserFolderImportConfigurator(ImportConfiguratorBase):
     """User Folder import configurator.
 
-    The import mapping has to be able to read all user folders
-    possible, otherwise we'd have to sniff the type before parsing.
+    The import mapping can be overriden by calling registerImportMapping.
     """
-    def _getImportMapping(self):
-        return {
-            'user-folder': {
-                'type': {},
-                'property': {KEY: 'properties', DEFAULT: ()},
-                },
-            }
-
-    # XXX Should be a proper registry
-    _products = {
-        'User Folder': ('OFSP', 'manage_addUserFolder'),
-        'User Folder With Groups': ('CPSUserFolder',
-                                    'addUserFolderWithGroups'),
-        'CPS User Folder': ('CPSUserFolder', 'addCPSUserFolder'),
+    _IMPORT_MAPPING = {
+        'user-folder': {
+            'type': {},
+            'property': {KEY: 'properties', DEFAULT: ()},
+            },
         }
+
+    def _getImportMapping(self):
+        return self._IMPORT_MAPPING
 
     def create(self, portal, info):
         type = info['type']
+        if type not in _IMPORTERS:
+            raise ValueError("Unsupported user folder type: %r" % type)
+        factory, importer = _IMPORTERS[type]
         if getattr(aq_base(portal), 'acl_users', None) is None:
-            # Create it if nothing is there
-            if type not in self._products:
-                raise ValueError("Unsupported user folder type: %s" % type)
-            product, name = self._products[type]
-            factory = getattr(portal.manage_addProduct[product], name)
-            factory()
+            factory(portal)
         aclu = getToolByName(portal, 'acl_users')
         if aclu.meta_type != type:
             # Won't overwrite config for another type
             raise ValueError("Cannot install %r, a %r already exists" %
                              (type, aclu.meta_type))
-        # Properties
-        if type in ORIGINAL_USERFOLDER_API:
-            kw = {}
-            for prop_info in info['properties']:
-                id = prop_info['id']
-                value = prop_info['value']
-                if id == 'encrypt_passwords':
-                    value = value in ('1', 'True')
-                kw[id] = value
-            if kw:
-                aclu.manage_setUserFolderProperties(**kw)
+        # Import config
+        importer(self, aclu, info)
+
+
+##################################################
+# Registration
+
+def registerExportImport(meta_type, exporter, factory, importer):
+    _EXPORTERS[meta_type] = exporter
+    _IMPORTERS[meta_type] = (factory, importer)
+
+def registerImportMapping(mapping):
+    """Allow other products to register additional mappings.
+    """
+    im = UserFolderImportConfigurator._IMPORT_MAPPING
+    for key, value in mapping.items():
+        if key == 'user-folder':
+            im['user-folder'].update(value)
+        elif key in im:
+            raise ValueError("Bad configuration, trying to reregister %s"
+                             % key)
         else:
-            for prop_info in info['properties']:
-                self.initProperty(aclu, prop_info)
-            if getattr(aq_base(aclu), '_postProcessProperties', None) is not None:
-                aclu._postProcessProperties()
+            im[key] = value
+
+# Standard user folders
+
+def constructUserFolder(container):
+    container.manage_addProduct['OFSP'].manage_addUserFolder()
+
+def constructUserFolderWithGroups(container):
+    container.manage_addProduct['CPSUserFolder'].addUserFolderWithGroups()
+
+def constructCPSUserFolder(container):
+    container.manage_addProduct['CPSUserFolder'].addCPSUserFolder()
+
+registerExportImport('User Folder', exportOriginalAPI,
+                     constructUserFolder, importOriginalAPI)
+registerExportImport('User Folder With Groups', exportOriginalAPI,
+                     constructUserFolderWithGroups, importOriginalAPI)
+registerExportImport('CPS User Folder', exportProperties,
+                     constructCPSUserFolder, importProperties)
