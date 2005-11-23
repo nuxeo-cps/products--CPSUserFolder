@@ -1076,7 +1076,7 @@ class Group:
     def __repr__(self):
         # I hope no code assumes that __repr__ is the groupname
         return "<Group %s>" % self.id
-    
+
     def getUsers(self):
         return self.users
 
@@ -1092,5 +1092,5 @@ class Group:
     def setMemberRoles(self, userid, roles):
         raise NotImplementedError
 
-############################################################################    
-    
+############################################################################
+
