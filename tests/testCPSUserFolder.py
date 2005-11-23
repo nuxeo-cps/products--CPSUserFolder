@@ -64,6 +64,7 @@ class FakeDirectory(Folder):
     _deleteEntry = deleteEntry
     def hasEntry(self, id):
         return self.entries.has_key(id)
+    _hasEntry = hasEntry
     def listEntryIds(self):
         return self.entries.keys()
 
@@ -363,6 +364,56 @@ class TestCPSUserFolder(unittest.TestCase):
         # Backward compatibility with UserFolderWithGroups
         group = aclu.getGroupById('role:Authenticated')
         self.assertEquals(group.getUsers(), ())
+
+    def test_group_API_security(self):
+        # getGroupById should work with the 'ManageUsers' right
+        # and not be dependent on group dir getEntry's rights
+        # wich is driven by 'checkViewEntryAllowed()'
+        acl_entry_view_roles_c = []
+
+        def getEntry(id, default=_marker):
+            # faking security
+            from AccessControl import getSecurityManager
+            roles = getSecurityManager().getUser().getRolesInContext(self)
+            allowed = False
+            for role in roles:
+                if role in acl_entry_view_roles_c:
+                    allowed = True
+                    break
+            if not allowed:
+                from AccessControl import Unauthorized
+                raise Unauthorized
+
+            return _getEntry(id, default)
+
+        def hasEntry(id):
+            # faking security
+            from AccessControl import getSecurityManager
+            roles = getSecurityManager().getUser().getRolesInContext(self)
+            allowed = False
+            for role in roles:
+                if role in acl_entry_view_roles_c:
+                    allowed = True
+                    break
+            if not allowed:
+                from AccessControl import Unauthorized
+                raise Unauthorized
+            return _hasEntry(id)
+
+        from AccessControl.Permissions import manage_users as ManageUsers
+        self.makeWithDirs()
+
+        portal = self.portal
+        aclu = portal.aclu
+        gdir = portal.portal_directories.groups
+        gdir.getEntry = getEntry
+        gdir.hasEntry = hasEntry
+        entry = {'group': 'rodents', 'members': ['mickey']}
+        gdir.createEntry(entry)
+
+        # this should pass
+        res = aclu.getGroupById('rodents')
+        self.assertEquals(res.id, 'rodents')
 
     def test_user_not_shared(self):
         # Ensure that two requests for the same user return a different object.

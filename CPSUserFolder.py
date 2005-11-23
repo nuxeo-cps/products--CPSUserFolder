@@ -540,8 +540,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         groups_dir = self._getGroupsDirectory()
         if groups_dir is not None:
             if not groupname.startswith('role:'):
-                if groups_dir.hasEntry(groupname):
-                    group_entry = groups_dir.getEntry(groupname, default)
+                if groups_dir._hasEntry(groupname):
+                    group_entry = groups_dir._getEntry(groupname, default)
                     group_members = group_entry.get(self.groups_members_field,
                                                     ())
                     return Group(groupname, group_members)
