@@ -358,8 +358,7 @@ class TestCPSUserFolder(unittest.TestCase):
         self.assertEquals(group.getUsers(), ['mickey'])
 
         # Try to get a non existing entry.
-        group = aclu.getGroupById('fake', None)
-        self.assertEquals(group, None)
+        self.assertRaises(KeyError, aclu.getGroupById, 'fake')
 
         # Backward compatibility with UserFolderWithGroups
         group = aclu.getGroupById('role:Authenticated')

@@ -551,6 +551,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 return Group(groupname, ())
             if default is not _marker:
                 return default
+            raise KeyError, groupname
         else:
             raise ValueError, "The directory %s doesn't exist" % self.groups_dir
 
