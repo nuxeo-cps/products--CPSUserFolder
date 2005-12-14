@@ -2,84 +2,101 @@
 CPSUserFolder Design
 ====================
 
-$Id$
+:Revision: $Id$
+
+.. sectnum::    :depth: 4
+.. contents::   :depth: 4
+
 
 Introduction
 ============
 
-CPSUserFolder is a user folder designed to work in conjunction with
-CPSDirectory (and therefore CPSSchemas). Directories are used to
-describe what are the attributes of a user (using a schema) and where
-they are stored (depending on the type of directory). This is also used
-for roles and groups, so that for instance one can easily add additional
-properties to groups.
+CPSUserFolder is a user folder designed to work in conjunction
+with CPSDirectory (and therefore CPSSchemas). Directories are used
+to describe what are the attributes of a user (using a schema) and
+where they are stored (depending on the type of directory). This
+is also used for roles and groups, so that, for instance, one can
+easily add additional properties to groups.
 
 Configuration
 =============
 
-When configuring a CPS User Folder, you have to specify a number of
-parameters:
+When configuring a CPS User Folder, you have to specify a number
+of parameters:
 
-Users directory
+- Users directory
 
-  The directory that holds the users. It's recommended that it be a
-  directory called 'members', as this name is assumed by CPS in several
-  place.
+  The directory that holds the users. It's recommended that it be
+  a directory called 'members', as this name is assumed by CPS in
+  several place.
 
-  The id of this directory's entries will be the user ids.
+  The ID of this directory's entries will be the user IDs.
 
-Users directory: login field
+- Users directory: login field
 
-  The field of the users directory that is used to find users at login
-  time. It may be different that the directory's id field.
+  The field of the users directory that is used to find users at
+  login time. It may be different that the directory's ID field.
 
-  If it is empty, the directory's id field will be used.
+  If it is empty, the directory's ID field will be used.
 
-Users directory: roles field
+- Users directory: roles field
 
   The field of the users directory that holds the roles of the user.
 
-Users directory: groups field
+- Users directory: groups field
 
-  The field of the users directory that holds the groups of the user.
+  The field of the users directory that holds the groups of the
+  user.
 
-During authentication, the password of an entry will be checked using
-the directory's API to check authenticated entries. Depending on the
-directory type, this may be a comparison with an cleartext field, or (in
-the case of LDAP for instance) a specific authentication against the
-directory's backend.
+During authentication, the password of an entry will be checked
+using the directory's API to check authenticated entries.
+Depending on the directory type, this may be a comparison with an
+clear text field, or (in the case of LDAP for instance) a specific
+authentication against the directory's backend.
 
 Directories
 ===========
 
-CPSUserFolder uses heavily the MetaDirectory and StackingDirectory of
-CPSDirectory. These directories provide a unified view of several other
-directories, and dispatch requests accordingly. They can also convert
-attribute names.
+CPSUserFolder uses heavily the MetaDirectory and StackingDirectory
+of CPSDirectory. These directories provide a unified view of
+several other directories, and dispatch requests accordingly. They
+can also convert attribute names.
 
 The main uses of MetaDirectory in CPSUserFolder are:
 
-- storing some attributes of an entry in one directory (ex: LDAP for
-  main corporate user information) and others attributes in another
-  directory (ex: ZODB for zope-specific information like
-  'last_login_time'),
+- storing some attributes of an entry in one directory (ex: LDAP
+  for main corporate user information) and other attributes in
+  another directory (example: ZODB for Zope-specific information
+  like 'last_login_time').
 
-- renaming fields (ex: the 'email' field of the directory 'members'
-  actually comes from the 'mail' field of the directory 'members_ldap'),
+- renaming fields (example: the 'email' field of the directory
+  'members' actually comes from the 'mail' field of the directory
+  'members_ldap').
 
 The main use of StackingDirectory in CPSUserFolder is:
 
-- having some users stored in one directory and others in another
-  directory (ex: aggregation of two LDAP branche),
+- Having some users stored in one directory and others in another
+  directory (example: aggregation of two LDAP branches).
 
-- providing a different view on a directory (ex: LDAP, whose id field is
-  the dn, seen as standard directory whose id field is an uid).
+- Providing a different view on a directory (example: LDAP, whose
+  ID field is the DN, seen as standard directory whose ID field is
+  an uid).
 
 Memberdata Tool
 ===============
 
 In standard CMF, the memberdata tool exists to hold additional
-information about users that cannot be stored in the user folder. With
-CPSUserFolder, it's no longer necessary as a MetaDirectory can be used
-to dispatch some attributes into the standard storage, and additional
-attributes (login_time, last_login_time, etc.) to another storage.
+information about users that cannot be stored in the user folder.
+With CPSUserFolder, it's no longer necessary as a MetaDirectory
+can be used to dispatch some attributes into the standard storage,
+and additional attributes (login_time, last_login_time, etc.) to
+another storage.
+
+
+.. Emacs
+.. Local Variables:
+.. mode: rst
+.. End:
+.. Vim
+.. vim: set filetype=rst:
+
