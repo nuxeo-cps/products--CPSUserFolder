@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<user-folder type="TYPE"
-             xmlns:tal="http://xml.zope.org/namespaces/tal"
-             tal:attributes="type here/getType">
-  <property tal:replace="structure here/getPropertiesXML"/>
-</user-folder>

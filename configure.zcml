@@ -1,0 +1,27 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:five="http://namespaces.zope.org/five">
+
+  <adapter
+      factory=".exportimport.StandardUserFolderXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="AccessControl.interfaces.IStandardUserFolder
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <adapter
+      factory=".exportimport.UserFolderWithGroupsXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSUserFolder.interfaces.IUserFolderWithGroups
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+  <adapter
+      factory=".exportimport.CPSUserFolderXMLAdapter"
+      provides="Products.GenericSetup.interfaces.IBody"
+      for="Products.CPSUserFolder.interfaces.ICPSUserFolder
+           Products.GenericSetup.interfaces.ISetupEnviron"
+      />
+
+</configure>

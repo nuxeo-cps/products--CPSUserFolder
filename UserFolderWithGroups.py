@@ -49,6 +49,8 @@ from AccessControl.PermissionRole import _what_not_even_god_should_do
 from AccessControl.PermissionRole import rolesForPermissionOn
 from Products.CMFCore.utils import getToolByName
 
+from zope.interface import implements
+from Products.CPSUserFolder.interfaces import IUserFolderWithGroups
 
 _marker = []
 
@@ -399,6 +401,8 @@ class UserFolderWithGroups(UserFolder):
     Groups can be used to affect roles to a lot of users
     at the same time, and to centralize management.
     """
+
+    implements(IUserFolderWithGroups)
 
     meta_type = 'User Folder With Groups'
     title = 'User Folder With Groups'

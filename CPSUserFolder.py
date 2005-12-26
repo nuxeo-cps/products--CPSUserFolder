@@ -47,6 +47,9 @@ from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 
 from Products.CPSUserFolder import TimeoutCache
 
+from zope.interface import implements
+from Products.CPSUserFolder.interfaces import ICPSUserFolder
+
 
 _marker = []
 CACHE_KEY = 'CPSUserFolder'
@@ -70,6 +73,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
       id -> user_info = {'password', 'roles', 'groups', 'entry'}
         the password may be None if no password has yet been checked
     """
+
+    implements(ICPSUserFolder)
+
     meta_type = 'CPS User Folder'
     id = 'acl_users'
     title = 'CPS User Folder'
