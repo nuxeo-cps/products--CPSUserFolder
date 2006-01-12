@@ -13,14 +13,14 @@
   <adapter
       factory=".exportimport.UserFolderWithGroupsXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSUserFolder.interfaces.IUserFolderWithGroups
+      for=".interfaces.IUserFolderWithGroups
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
   <adapter
       factory=".exportimport.CPSUserFolderXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
-      for="Products.CPSUserFolder.interfaces.ICPSUserFolder
+      for=".interfaces.ICPSUserFolder
            Products.GenericSetup.interfaces.ISetupEnviron"
       />
 
