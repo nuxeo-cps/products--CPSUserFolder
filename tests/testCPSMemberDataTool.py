@@ -19,21 +19,19 @@
 # $Id$
 
 import unittest
-from Interface.Verify import verifyClass
-from Products.CPSUserFolder.CPSMemberDataTool \
-    import CPSMemberDataTool, CPSMemberData
+from Products.CPSUserFolder.CPSMemberDataTool import CPSMemberDataTool
+from Products.CPSUserFolder.CPSMemberDataTool import CPSMemberData
+from zope.interface.verify import verifyClass
+from Products.CMFCore.interfaces import IMemberDataTool
+from Products.CMFCore.interfaces import IMemberData
 
 class TestCPSMemberDataTool(unittest.TestCase):
-    # FIXME: "The registerMemberData attribute was not provided."
-    def XXXtestInterfaces(self):
-        for interface in CPSMemberDataTool.__implements__:
-            verifyClass(interface, CPSMemberDataTool)
+    def testInterfaces(self):
+        verifyClass(IMemberDataTool, CPSMemberDataTool)
 
 class TestCPSMemberData(unittest.TestCase):
     def testInterfaces(self):
-        for interface in (CPSMemberData.__implements__,):
-            verifyClass(interface, CPSMemberData)
-
+        verifyClass(IMemberData, CPSMemberData)
 
 def test_suite():
     return unittest.TestSuite((

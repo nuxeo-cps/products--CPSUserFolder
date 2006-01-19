@@ -35,8 +35,9 @@ from Products.CMFCore.permissions import SetOwnProperties
 from Products.CMFCore.permissions import ManagePortal
 from Products.CMFCore.ActionProviderBase import ActionProviderBase
 
-from Products.CMFCore.interfaces.portal_memberdata import portal_memberdata as IMemberDataTool
-from Products.CMFCore.interfaces.portal_memberdata import MemberData as IMemberData
+from zope.interface import implements
+from Products.CMFCore.interfaces import IMemberDataTool
+from Products.CMFCore.interfaces import IMemberData
 
 from Products.CMFCore.MemberDataTool import MemberDataTool as BaseMemberDataTool
 
@@ -47,7 +48,7 @@ _marker = []
 class CPSMemberDataTool(UniqueObject, SimpleItem, ActionProviderBase):
     """This tool wraps user objects, making them act as Member objects.
     """
-    __implements__ = (IMemberDataTool, ActionProviderBase.__implements__)
+    implements(IMemberDataTool)
 
     id = 'portal_memberdata'
     meta_type = 'CPS MemberData Tool'
@@ -140,12 +141,34 @@ class CPSMemberDataTool(UniqueObject, SimpleItem, ActionProviderBase):
         # the user as context.
         return m.__of__(self).__of__(u)
 
+    # IMemberDataTool
+
+    security.declarePrivate('searchMemberData')
+    def searchMemberData(self, search_param, search_term, attributes=()):
+        raise NotImplementedError("Use searchMemberDataContents instead")
+
+    security.declarePrivate('registerMemberData')
+    def registerMemberData(self, data, member_id):
+        pass
+
+    security.declarePrivate('deleteMemberData')
+    def deleteMemberData(self, member_id):
+        pass
+
+    security.declarePrivate('pruneMemberDataContents')
+    def pruneMemberDataContents(self):
+        pass
+
+    security.declarePrivate('getMemberDataContents')
+    def getMemberDataContents(self):
+        return []
+
 InitializeClass(CPSMemberDataTool)
 
 
 class CPSMemberData(SimpleItem):
 
-    __implements__ = IMemberData
+    implements(IMemberData)
 
     security = ClassSecurityInfo()
 
