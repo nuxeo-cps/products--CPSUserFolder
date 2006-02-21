@@ -6,7 +6,9 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- #1314: cannot join the portal with portal_joining enabled (using 
+  unrestricted setProperties)
+
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

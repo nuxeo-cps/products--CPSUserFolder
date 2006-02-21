@@ -200,7 +200,13 @@ class CPSMemberData(SimpleItem):
         if not hasattr(aq_base(u), 'setProperties'):
             raise ValueError("User %s does not have a setProperties" %
                              self.getId())
-        u.setProperties(**mapping)
+        mtool = getToolByName(self, 'portal_membership')
+        if mtool.isAnonymousUser():
+            # unrestricted. The user is joining the portal, so it's 
+            # anonymous for now
+            u._setProperties(**mapping)
+        else:
+            u.setProperties(**mapping)
 
     security.declarePublic('getProperty')
     def getProperty(self, key, default=_marker):

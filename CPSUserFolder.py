@@ -942,6 +942,32 @@ class CPSUser(BasicUser):
         self._entry = user._entry
         LOG('setProperties', DEBUG, '    entry = %s' % user._entry)
 
+    # CPS extension
+    security.declarePrivate('_setProperties')
+    def _setProperties(self, **kw):
+        """Set the value of properties for the user (unrestricted)."""
+        id = self._id
+        aclu = self._aclu
+        dir = aclu._getUsersDirectory()
+
+        # Remove the user from the cache
+        aclu._removeUserIdFromCache(id)
+
+        # Set the properties
+        kw[dir.id_field] = id
+        dir._editEntry(kw, check_acls=False)
+
+        # Now update this object to make it correspond to the new user.
+        user = aclu.getUserById(id)
+        if user is None:
+            raise KeyError(id)
+
+        LOG('_setProperties', DEBUG, 'old entry = %s' % self._entry)
+        self._roles = user._roles
+        self._groups = user._groups
+        self._entry = user._entry
+        LOG('_setProperties', DEBUG, '    entry = %s' % user._entry)
+
     #
     # Internal API
     #
