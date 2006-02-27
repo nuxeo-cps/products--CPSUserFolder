@@ -234,13 +234,11 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if dtool is None:
             # User folder has been instanciated outside a CPS site.
             return None
-        try:
-            dir = getattr(dtool, self.users_dir)
-        except AttributeError:
-            LOG('CPSUserFolder', WARNING,
-                "Missing directory '%s'" % self.users_dir)
-            dir = None
-        return dir
+        users_dir = self.users_dir
+        if getattr(aq_base(dtool), users_dir, None) is None:
+            LOG('CPSUserFolder', WARNING, "Missing directory %r" % users_dir)
+            return None
+        return getattr(dtool, users_dir)
 
     security.declarePrivate('_buildUser')
     def _buildUser(self, id, user_info):

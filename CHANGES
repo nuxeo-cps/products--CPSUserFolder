@@ -8,7 +8,7 @@ Bug fixes:
 ~~~~~~~~~~
 - #1314: cannot join the portal with portal_joining enabled (using 
   unrestricted setProperties)
-
+- #1469: cannot use portal after deleting members directory
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
