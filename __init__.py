@@ -18,7 +18,7 @@
 # $Id$
 
 import sys
-from zLOG import LOG, INFO, ERROR
+from zLOG import LOG, DEBUG, ERROR
 from AccessControl.Permissions import add_user_folders as AddUserFolders
 from Products.CMFCore.permissions import ManagePortal
 
@@ -30,7 +30,7 @@ from UserFolderWithGroups import addUserFolderWithGroups
 try:
     import Products.NuxUserGroups
 except ImportError:
-    LOG('CPSUserFolder', INFO, 'Faking Products.NuxUserGroups')
+    LOG('CPSUserFolder', DEBUG, 'Faking Products.NuxUserGroups')
     from Products.CPSUserFolder import FakeNuxUserGroups
     sys.modules['Products.NuxUserGroups'] = FakeNuxUserGroups
 else:
