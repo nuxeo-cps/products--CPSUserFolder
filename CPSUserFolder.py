@@ -544,12 +544,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         groups_dir = self._getGroupsDirectory()
         if groups_dir is not None:
             if not groupname.startswith('role:'):
-                try:
-                    group_entry = groups_dir._getEntry(groupname)
-                except (KeyError, ValueError), err:
-                    if default is not _marker and str(err) == "'%s'" % groupname:
+                group_entry = groups_dir._getEntry(groupname, default=None)
+                if group_entry is None:
+                    if default is not _marker:
                         return default
                     raise KeyError, groupname
+
                 group_members = group_entry.get(self.groups_members_field,
                                                     ())
                 return Group(groupname, group_members)

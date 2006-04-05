@@ -48,14 +48,13 @@ class FakeDirectory(Folder):
         self.entries = {}
     def getEntry(self, id, default=_marker):
         try:
-            return self._getEntry(id)
+            return self.entries[id]
         except KeyError:
             if default is _marker:
                 raise
             else:
                 return default
-    def _getEntry(self, id, **kw):
-        return self.entries[id]
+    _getEntry = getEntry
     def createEntry(self, entry):
         new = deepcopy(self.blank)
         new.update(entry)
