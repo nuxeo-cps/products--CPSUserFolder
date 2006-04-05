@@ -544,18 +544,19 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         groups_dir = self._getGroupsDirectory()
         if groups_dir is not None:
             if not groupname.startswith('role:'):
-                if groups_dir._hasEntry(groupname):
-                    group_entry = groups_dir._getEntry(groupname, default)
-                    group_members = group_entry.get(self.groups_members_field,
+                try:
+                    group_entry = groups_dir._getEntry(groupname)
+                except (KeyError, ValueError), err:
+                    if default is not _marker and str(err) == "'%s'" % groupname:
+                        return default
+                    raise KeyError, groupname
+                group_members = group_entry.get(self.groups_members_field,
                                                     ())
-                    return Group(groupname, group_members)
+                return Group(groupname, group_members)
             else:
                 # Backward compatibility with UserFolderWithGroups for
                 # CPSSubscriptions.RecipientsRules (see ticket:890)
                 return Group(groupname, ())
-            if default is not _marker:
-                return default
-            raise KeyError, groupname
         else:
             raise ValueError, "The directory %s doesn't exist" % self.groups_dir
 

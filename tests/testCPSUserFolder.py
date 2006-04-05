@@ -47,10 +47,15 @@ class FakeDirectory(Folder):
         self.blank = blank
         self.entries = {}
     def getEntry(self, id, default=_marker):
-        res = self.entries.get(id, default)
-        if res is _marker: raise KeyError(id)
-        return res
-    _getEntry = getEntry
+        try:
+            return self._getEntry(id)
+        except KeyError:
+            if default is _marker:
+                raise
+            else:
+                return default
+    def _getEntry(self, id, **kw):
+        return self.entries[id]
     def createEntry(self, entry):
         new = deepcopy(self.blank)
         new.update(entry)
@@ -359,6 +364,10 @@ class TestCPSUserFolder(unittest.TestCase):
 
         # Try to get a non existing entry.
         self.assertRaises(KeyError, aclu.getGroupById, 'fake')
+
+        # Try the default value
+        group = aclu.getGroupById('fake', default='the_default')
+        self.assertEquals(group, 'the_default')
 
         # Backward compatibility with UserFolderWithGroups
         group = aclu.getGroupById('role:Authenticated')
