@@ -1,4 +1,20 @@
 *******************************************
+** CPSUserFolder V0.8.4 [R1 build 2006/04/10-16:04 by gracinet]
+** SVN URL: http://svn/pub/CPSUserFolder/trunk Revision: 35062
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- #1596: getGroupById was broken
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.8.3 [R1 build 2006/03/03-17:31 by ben]
 ** SVN URL: https://svn.nuxeo.org/pub/CPSUserFolder/trunk Revision: 33855
 Requires:
