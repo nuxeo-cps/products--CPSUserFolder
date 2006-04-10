@@ -6,8 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- fixed bug when no meta_type is provided in an extension profile for
-  CPSUserFolder
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -
