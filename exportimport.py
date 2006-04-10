@@ -168,7 +168,7 @@ class CPSUserFolderXMLAdapter(XMLAdapterBase, ObjectManagerHelpers,
         """Import the object from the DOM node.
         """
         meta_type = str(node.getAttribute('meta_type'))
-        if meta_type != self.context.meta_type:
+        if meta_type and meta_type != self.context.meta_type:
             self._logger.error("Cannot import %r into %r." %
                                (meta_type, self.context.meta_type))
             return
