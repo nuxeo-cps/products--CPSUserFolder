@@ -18,24 +18,14 @@
 # $Id$
 
 import sys
-from zLOG import LOG, DEBUG, ERROR
 from AccessControl.Permissions import add_user_folders as AddUserFolders
 from Products.CMFCore.permissions import ManagePortal
 
 from UserFolderWithGroups import UserFolderWithGroups as UFWG
 from UserFolderWithGroups import addUserFolderWithGroups
 
-# Make a fake NuxUserGroups module to provide backward compatibility
-# to previous persistent class from the old module.
-try:
-    import Products.NuxUserGroups
-except ImportError:
-    LOG('CPSUserFolder', DEBUG, 'Faking Products.NuxUserGroups')
-    from Products.CPSUserFolder import FakeNuxUserGroups
-    sys.modules['Products.NuxUserGroups'] = FakeNuxUserGroups
-else:
-    LOG('CPSUserFolder', ERROR,
-        'Old product NuxUserGroups is incompatible with CPSUserFolder')
+#from Products.CPSUserFolder import FakeNuxUserGroups
+#sys.modules['Products.NuxUserGroups'] = FakeNuxUserGroups
 
 
 import CPSUserFolder

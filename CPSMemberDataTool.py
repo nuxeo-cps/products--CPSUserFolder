@@ -21,8 +21,6 @@
 A memberdata tool designed to work in conjunction with CPS User Folder.
 """
 
-from zLOG import LOG, DEBUG
-
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import DTMLFile
 from Globals import InitializeClass

@@ -25,8 +25,6 @@ Also, patch to add it back to a virtual NuxUserGroups product
 to preserve backward compatibility.
 """
 
-from zLOG import LOG, DEBUG, ERROR
-
 from copy import deepcopy
 
 from Globals import InitializeClass

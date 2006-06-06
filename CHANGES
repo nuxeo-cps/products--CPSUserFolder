@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Use logging module instead of zLOG.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

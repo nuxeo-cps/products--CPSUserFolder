@@ -22,8 +22,8 @@ CPSUserFolder
 A user folder based on CPSDirectory and CPSSchemas.
 """
 
-from zLOG import LOG, DEBUG, WARNING, ERROR, TRACE
-
+import logging
+from ZODB.loglevels import TRACE
 from copy import deepcopy
 from types import ListType
 import base64
@@ -49,6 +49,9 @@ from Products.CPSUserFolder import TimeoutCache
 
 from zope.interface import implements
 from Products.CPSUserFolder.interfaces import ICPSUserFolder
+
+
+logger = logging.getLogger('CPSUserFolder')
 
 
 _marker = []
@@ -222,8 +225,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         try:
             dir = getattr(dtool, self.groups_dir)
         except AttributeError:
-            LOG('CPSUserFolder', WARNING,
-                "Missing directory '%s'" % self.groups_dir)
+            logger.warning("Missing directory %r", self.groups_dir)
             dir = None
         return dir
 
@@ -236,7 +238,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             return None
         users_dir = self.users_dir
         if getattr(aq_base(dtool), users_dir, None) is None:
-            LOG('CPSUserFolder', WARNING, "Missing directory %r" % users_dir)
+            logger.warning("Missing directory %r", users_dir)
             return None
         return getattr(dtool, users_dir)
 
@@ -285,9 +287,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         else:
             userid = self._getUserIdFromLoginCache(name)
             if userid is not None:
-                LOG('getUserWithAuthentication', TRACE,
-                    "Getting info from cache name=%s -> userid=%s"
-                    % (name, userid))
+                logger.log(TRACE, "Getting info from cache name=%s -> "
+                           "userid=%s", name, userid)
 
         # Check cache for user
         user_is_from_cache = False
@@ -297,27 +298,24 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 user_is_from_cache = True
                 cache_pw = user_info['password']
                 if password is None or password == cache_pw:
-                    LOG('getUserWithAuthentication', TRACE,
-                        "Returning user %s from cache" % userid)
+                    logger.log(TRACE, "Returning user %s from cache", userid)
                     # Build a new user object from cache info
                     user = self._buildUser(userid, user_info)
                     return user
                 elif cache_pw is not None:
                     # Incorrect password, purge from cache
-                    LOG('getUserWithAuthentication', DEBUG,
-                        "Incorrect password for cached user %s" % userid)
+                    logger.debug("Incorrect password for cached user %s",
+                                 userid)
                     self._removeUserIdFromCache(userid)
                     userid = None
 
         try:
             if password is not None and not dir.isAuthenticating():
-                LOG('getUserWithAuthentication', ERROR,
-                    "Directory %s is not authenticating" % dir.getId())
+                logger.error("Directory %s is not authenticating", dir.getId())
                 return None
         except ValueError, e:
-            LOG('getUserWithAuthentication', ERROR,
-                "Got %s(%s) while calling isAuthenticating on %s" %
-                (e.__class__.__name__, e, dir.getId()))
+            logger.error("Got %s(%s) while calling isAuthenticating on %s",
+                         e.__class__.__name__, e, dir.getId())
             return None
 
         # Get entry authenticated
@@ -338,15 +336,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 res = dir._searchEntries(return_fields=return_fields,
                                         **{auth_field: [name]})
                 if not res:
-                    LOG('getUserWithAuthentication', TRACE,
-                        "No result for %s=%s" % (auth_field, name))
+                    logger.log(TRACE, "No result for %s=%s", auth_field, name)
                     # XXX do negative cache for login
                     return None
                 if len(res) > 1:
-                    LOG('getUserWithAuthentication', ERROR,
-                        "Search on %s=%s returned several entries, "
-                        "confusing authentication rejected"
-                        % (auth_field, name))
+                    logger.log(TRACE, "Search on %s=%s returned several "
+                               "entries, confusing authentication rejected",
+                               auth_field, name)
                     return None
                 if password is not None:
                     # Refetch the entry authenticated.
@@ -356,17 +352,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     # Use the entry that the search returned.
                     userid, entry = res[0]
         except AuthenticationFailed:
-            LOG('getUserWithAuthentication', TRACE,
-                "Authentication failed for user %s" % userid)
+            logger.log(TRACE, "Authentication failed for user %s", userid)
             entry = None
         except KeyError, e:
-            LOG('getUserWithAuthentication', DEBUG,
-                "KeyError (%s) for user %s" % (e, userid))
+            logger.debug("KeyError (%s) for user %s", e, userid)
             entry = None
         except ValueError, e:
-            LOG('getUserWithAuthentication', ERROR,
-                "Got %s(%s) while authenticating %s" %
-                (e.__class__.__name__, e, name))
+            logger.error("Got %s(%s) while authenticating %s",
+                         e.__class__.__name__, e, name)
             entry = None
         if entry is None:
             self._removeUserIdFromCache(userid)
@@ -377,14 +370,14 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         try:
             roles = entry[self.users_roles_field]
         except KeyError:
-            LOG('getUserWithAuthentication', DEBUG,
-                'User %s has no field %s' % (userid, self.users_roles_field))
+            logger.debug("User %s has no field %s", userid,
+                         self.users_roles_field)
             roles = ()
         try:
             groups = entry[self.users_groups_field]
         except KeyError:
-            LOG('getUserWithAuthentication', DEBUG,
-                'User %s has no field %s' % (userid, self.users_groups_field))
+            logger.debug("User %s has no field %s", userid,
+                         self.users_groups_field)
             groups = ()
         if password is None:
             # XXX no raise if users_password_field has not be set
@@ -392,9 +385,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 try:
                     password = entry[self.users_password_field]
                 except KeyError:
-                    LOG('getUserWithAuthentication', DEBUG,
-                        'User %s has no field %s' %
-                        (userid, self.users_password_field))
+                    logger.debug("User %s has no field %s", userid,
+                                 self.users_password_field)
         user = self._buildUser(userid, {
             'password': password,
             'roles': roles,
@@ -408,8 +400,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if auth_field != dir_id_field:
             self._setUserIdToLoginCache(name, userid)
         self._setUserToIdCache(userid, user_info)
-        LOG('getUserWithAuthentication', DEBUG,
-            "Setting user %s into cache" % userid)
+        logger.debug("Setting user %s into cache", userid)
 
         return user
 
@@ -769,12 +760,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         if hasattr(aq_base(user), 'getComputedGroups'):
             groups = user.getComputedGroups()
         elif hasattr(aq_base(user), 'getGroups'):
-            LOG('_getAllowedRolesAndUsers', DEBUG, 'no computed groups but groups for %s (%s)' % (`user`, user.aq_parent))
+            logger.debug("_getAllowedRolesAndUsers: no computed groups but "
+                         "groups for %r (%s)", user, user.aq_parent)
             groups = user.getGroups() + ('role:Anonymous',)
             if 'Authenticated' in res:
                 groups = groups + ('role:Authenticated',)
         else:
-            LOG('_getAllowedRolesAndUsers', DEBUG, 'no groups for %s' % `user`)
+            logger.debug("_getAllowedRolesAndUsers: no groups for %r", user)
             groups = ('role:Anonymous',)
         for group in groups:
             res.append('group:' + group)
@@ -935,11 +927,9 @@ class CPSUser(BasicUser):
         if user is None:
             raise KeyError(id)
 
-        LOG('setProperties', DEBUG, 'old entry = %s' % self._entry)
         self._roles = user._roles
         self._groups = user._groups
         self._entry = user._entry
-        LOG('setProperties', DEBUG, '    entry = %s' % user._entry)
 
     # CPS extension
     security.declarePrivate('_setProperties')
@@ -961,11 +951,9 @@ class CPSUser(BasicUser):
         if user is None:
             raise KeyError(id)
 
-        LOG('_setProperties', DEBUG, 'old entry = %s' % self._entry)
         self._roles = user._roles
         self._groups = user._groups
         self._entry = user._entry
-        LOG('_setProperties', DEBUG, '    entry = %s' % user._entry)
 
     #
     # Internal API
