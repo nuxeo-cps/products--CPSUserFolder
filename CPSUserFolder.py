@@ -355,7 +355,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             logger.log(TRACE, "Authentication failed for user %s", userid)
             entry = None
         except KeyError, e:
-            logger.debug("KeyError (%s) for user %s", e, userid)
+            logger.log(TRACE, "KeyError(%s) for user %s", e, userid)
             entry = None
         except ValueError, e:
             logger.error("Got %s(%s) while authenticating %s",
