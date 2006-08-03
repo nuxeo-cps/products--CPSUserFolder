@@ -1,4 +1,20 @@
 *******************************************
+** CPSUserFolder V0.8.7 [R1 build 2006/08/03-09:21 by fermigier]
+** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk Revision: 47779
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Use logging module instead of zLOG.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** CPSUserFolder V0.8.6 [R1 build 2006/05/02-15:51 by gracinet]
 ** SVN URL: http://svn/pub/CPSUserFolder/trunk Revision: 45160
 Requires:
