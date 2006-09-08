@@ -181,6 +181,16 @@ class PatchBasicUser:
         groups = getattr(aq_base(self), '_usergroups', ())
         return tuple(groups)
 
+    security.declarePublic('has_group')
+    def has_group(self, groups):
+        """Check to see if a user has a given group or groups.
+
+        Returns True if the user is in any of the groups.
+        """
+        if isinstance(groups, basestring):
+            groups = [groups]
+        return bool(set(groups) & set(self.getGroups()))
+
     security.declarePrivate('_setGroups')
     def _setGroups(self, groupnames):
         self._usergroups = list(groupnames)

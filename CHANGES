@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Added has_group API on user objects.
 Bug fixes:
 ~~~~~~~~~~
 -

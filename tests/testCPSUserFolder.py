@@ -116,6 +116,9 @@ class TestCPSUser(unittest.TestCase):
         self.assertEquals(sorted(user.getComputedGroups()),
                           ['role:Anonymous', 'role:Authenticated',
                            'somegroup'])
+        self.assertEquals(user.has_group('somegroup'), True)
+        self.assertEquals(user.has_group(('somegroup',)), True)
+        self.assertEquals(user.has_group('berk'), False)
 
     def test_getProperty(self):
         user = self.makeUser()
