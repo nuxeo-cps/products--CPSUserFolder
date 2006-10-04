@@ -1,3 +1,23 @@
+===========================================================
+Package: CPSUserFolder 0.9.0
+===========================================================
+First release built by: ogrisel at: 2006-10-04T21:18:37
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/0.9.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@49317
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added has_group API on user objects.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
 *******************************************
 ** CPSUserFolder V0.8.7 [R1 build 2006/08/03-09:21 by fermigier]
 ** SVN URL: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk Revision: 47779

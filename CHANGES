@@ -1,12 +1,12 @@
-Requires:
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
 ~~~~~~~~~
 -
-New features:
-~~~~~~~~~~~~~
-- Added has_group API on user objects.
-Bug fixes:
-~~~~~~~~~~
--
-New internal features:
-~~~~~~~~~~~~~~~~~~~~~~
--
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
