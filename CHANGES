@@ -3,7 +3,9 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
--
+- #1704 (related to): added two new properties to make special groups
+  role:Authenticated and role:Anonymous optionaly behave as if they contain all
+  the members of the portal instead of being empty by default.
 Bug fixes
 ~~~~~~~~~
 -

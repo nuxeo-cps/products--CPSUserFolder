@@ -108,6 +108,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Groups directory: members field"},
         {'id': 'roles_members_field', 'type': 'string', 'mode': 'w',
          'label': "Roles directory: members field"},
+        {'id': 'is_role_authenticated_empty', 'type': 'boolean', 'mode': 'w',
+         'label': "Consider role:Authenticated as an empty group"},
+        {'id': 'is_role_anonymous_empty', 'type': 'boolean', 'mode': 'w',
+         'label': "Consider role:Anonymous as an empty group"},
         {'id': 'cache_timeout', 'type': 'int', 'mode': 'w',
          'label': "Cache timeout"},
         )
@@ -120,6 +124,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     roles_dir = 'roles'
     groups_members_field  = 'members'
     roles_members_field = 'members'
+    is_role_authenticated_empty = True
+    is_role_anonymous_empty = True
     cache_timeout = 300
 
     manage_options = (
@@ -541,13 +547,26 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         return default
                     raise KeyError, groupname
 
-                group_members = group_entry.get(self.groups_members_field,
-                                                    ())
-                return Group(groupname, group_members)
+                group_members = group_entry.get(self.groups_members_field, ())
+
             else:
-                # Backward compatibility with UserFolderWithGroups for
-                # CPSSubscriptions.RecipientsRules (see ticket:890)
-                return Group(groupname, ())
+                # Special groups must be group instance so that CPSSubscriptions
+                # work properly (cf ticket #890). This groups are considered
+                # empty by default to avoid spamming a uge quantity of members
+                # by error
+
+                emptyness = {
+                    "role:Authenticated": self.is_role_authenticated_empty,
+                    "role:Anonymous": self.is_role_anonymous_empty,
+                }
+                if emptyness.get(groupname, True):
+                    group_members = ()
+                else:
+                    group_members = self.getUserNames()
+
+
+            return Group(groupname, group_members)
+
         else:
             raise ValueError, "The directory %s doesn't exist" % self.groups_dir
 

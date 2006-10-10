@@ -354,7 +354,12 @@ class TestCPSUserFolder(unittest.TestCase):
 
         portal = self.portal
         aclu = portal.aclu
+        mdir = portal.portal_directories.members
         gdir = portal.portal_directories.groups
+
+        # Create some members
+        mdir.createEntry({'uid': 'mickey'})
+        mdir.createEntry({'uid': 'pluto'})
 
         # Create a new group using the directory.
         entry = {'group': 'rodents', 'members': ['mickey']}
@@ -372,8 +377,24 @@ class TestCPSUserFolder(unittest.TestCase):
         self.assertEquals(group, 'the_default')
 
         # Backward compatibility with UserFolderWithGroups
+        self.failUnless(aclu.is_role_authenticated_empty)
         group = aclu.getGroupById('role:Authenticated')
         self.assertEquals(group.getUsers(), ())
+
+        # now make role:Authenticated as a special group containing everybody
+        aclu.is_role_authenticated_empty = False
+        group = aclu.getGroupById('role:Authenticated')
+        self.assertEquals(group.getUsers(), ['mickey', 'pluto'])
+
+        # same behavior for role:Anonymous
+        self.failUnless(aclu.is_role_anonymous_empty)
+        group = aclu.getGroupById('role:Anonymous')
+        self.assertEquals(group.getUsers(), ())
+
+        # now make role:Anonymous as a special group containing everybody
+        aclu.is_role_anonymous_empty = False
+        group = aclu.getGroupById('role:Anonymous')
+        self.assertEquals(group.getUsers(), ['mickey', 'pluto'])
 
     def test_group_API_security(self):
         # getGroupById should work with the 'ManageUsers' right
