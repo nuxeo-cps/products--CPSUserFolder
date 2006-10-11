@@ -1,4 +1,26 @@
 ===========================================================
+Package: CPSUserFolder 0.10.0
+===========================================================
+First release built by: ogrisel at: 2006-10-11T20:18:59
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/0.10.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@49523
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+- #1704 (related to): added two new properties to make special groups
+  role:Authenticated and role:Anonymous optionaly behave as if they contain all
+  the members of the portal instead of being empty by default.
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 0.9.0
 ===========================================================
 First release built by: ogrisel at: 2006-10-04T21:18:37
