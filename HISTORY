@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSUserFolder 0.10.1
+===========================================================
+First release built by: gracinet at: 2006-11-16T18:19:12
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/0.10.1
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@50008
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- [packaging] bundleman svn property
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 0.10.0
 ===========================================================
 First release built by: ogrisel at: 2006-10-11T20:18:59
