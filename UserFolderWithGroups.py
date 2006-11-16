@@ -1,4 +1,4 @@
-# (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2004-2006 Nuxeo SAS <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -273,7 +273,7 @@ class PatchBasicUser:
                 roles.append(r)
         return roles
 
-    security.declarePublic('getRolesInContext')
+    security.declarePublic('allowed')
     def allowed(self, object, object_roles=None):
         """Check whether the user has access to object. The user must
            have one of the roles in object_roles to allow access."""

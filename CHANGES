@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- Fixed #1785 : Wrong security declaration in UserFolderWithRoles for allowed.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
