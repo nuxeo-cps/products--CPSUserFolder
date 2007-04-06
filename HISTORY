@@ -1,4 +1,26 @@
 ===========================================================
+Package: CPSUserFolder 0.10.3
+===========================================================
+First release built by: madarche at: 2007-04-06T17:23:58
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/0.10.3
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@51468
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Added REQUEST parameters to some CPSUserFolder methods in order to more easily
+  apply the modified version of the "post-only" Hotfix_20070319 and to be ready
+  for Zope >= 2.9.7.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 0.10.2
 ===========================================================
 First release built by: gracinet at: 2006-11-17T17:50:42

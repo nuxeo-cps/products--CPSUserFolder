@@ -6,9 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- Added REQUEST parameters to some CPSUserFolder methods in order to more easily
-  apply the modified version of the "post-only" Hotfix_20070319 and to be ready
-  for Zope >= 2.9.7.
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
