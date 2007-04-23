@@ -1,12 +1,12 @@
 Requires
 ~~~~~~~~
--
+- Zope 2.9.7
 New features
 ~~~~~~~~~~~~
 -
 Bug fixes
 ~~~~~~~~~
--
+- Protect methods against GET requests using postlony annotation.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

@@ -37,6 +37,7 @@ from AccessControl.User import BasicUser, BasicUserFolder
 from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.PermissionRole import rolesForPermissionOn
 from AccessControl.PermissionRole import _what_not_even_god_should_do
+from AccessControl.requestmethod import postonly
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
@@ -489,19 +490,23 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             # Invalidate cache for name.
             self._removeUserFromIdCache(name)
 
+
     security.declareProtected(ManageUsers, 'userFolderAddUser')
+    @postonly
     def userFolderAddUser(self, name, password, roles, domains,
                           REQUEST=None, **kw):
         """Create a new user."""
         return self._doAddUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderEditUser')
+    @postonly
     def userFolderEditUser(self, name, password, roles, domains,
                            REQUEST=None, **kw):
         """Modify an existing user."""
         return self._doChangeUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderDelUsers')
+    @postonly
     def userFolderDelUsers(self, names, REQUEST=None):
         """Delete one or more users."""
         return self._doDelUsers(names)
@@ -520,11 +525,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     # CPS Public extensions
 
     security.declareProtected(ManageUsers, 'userFolderAddGroup')
+    @postonly
     def userFolderAddGroup(self, groupname, REQUEST=None, **kw):
         """Create a group"""
         raise NotImplementedError
 
     security.declareProtected(ManageUsers, 'userFolderDelGroups')
+    @postonly
     def userFolderDelGroups(self, groupnames, REQUEST=None):
         """Delete groups"""
         raise NotImplementedError
