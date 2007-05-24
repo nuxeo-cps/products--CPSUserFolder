@@ -1,4 +1,4 @@
-# (C) Copyright 2004 Nuxeo SARL <http://nuxeo.com>
+# (C) Copyright 2004-2007 Nuxeo SAS <http://nuxeo.com>
 # Author: Florent Guillaume <fg@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -490,17 +490,19 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             self._removeUserFromIdCache(name)
 
     security.declareProtected(ManageUsers, 'userFolderAddUser')
-    def userFolderAddUser(self, name, password, roles, domains, **kw):
+    def userFolderAddUser(self, name, password, roles, domains,
+                          REQUEST=None, **kw):
         """Create a new user."""
         return self._doAddUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderEditUser')
-    def userFolderEditUser(self, name, password, roles, domains, **kw):
+    def userFolderEditUser(self, name, password, roles, domains,
+                           REQUEST=None, **kw):
         """Modify an existing user."""
         return self._doChangeUser(name, password, roles, domains, **kw)
 
     security.declareProtected(ManageUsers, 'userFolderDelUsers')
-    def userFolderDelUsers(self, names):
+    def userFolderDelUsers(self, names, REQUEST=None):
         """Delete one or more users."""
         return self._doDelUsers(names)
 
@@ -518,12 +520,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     # CPS Public extensions
 
     security.declareProtected(ManageUsers, 'userFolderAddGroup')
-    def userFolderAddGroup(self, groupname, **kw):
+    def userFolderAddGroup(self, groupname, REQUEST=None, **kw):
         """Create a group"""
         raise NotImplementedError
 
     security.declareProtected(ManageUsers, 'userFolderDelGroups')
-    def userFolderDelGroups(self, groupnames):
+    def userFolderDelGroups(self, groupnames, REQUEST=None):
         """Delete groups"""
         raise NotImplementedError
 
