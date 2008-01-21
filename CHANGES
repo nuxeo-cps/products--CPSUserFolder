@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #1887: Security hole in CPSUserFolder.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
