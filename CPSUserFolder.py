@@ -638,7 +638,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             trusted_auth_string = self.getTrustedAuthString()
             if request._auth and request._auth.startswith(trusted_auth_string):
                 # This is a trusted authentication: no password is required.
-                # This is a trusted authentication coming for example form
+                # This is a trusted authentication coming for example from
                 # CPSExtendedAuth or from an Apache frontend that has validated
                 # a client X509 certificate.
                 return self.getUserWithAuthentication(name, None, use_login=0)
