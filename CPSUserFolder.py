@@ -38,6 +38,7 @@ from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.PermissionRole import rolesForPermissionOn
 from AccessControl.PermissionRole import _what_not_even_god_should_do
 from AccessControl.requestmethod import postonly
+from AccessControl.SecurityManagement import newSecurityManager
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
@@ -57,6 +58,8 @@ TRUSTED_AUTH_BASE = 'TrustedAuth-'
 CACHE_KEY = 'CPSUserFolder'
 
 logger = logging.getLogger('CPSUserFolder')
+
+SWITCH_USER_COOKIE = "_cps_su"
 
 _marker = []
 
@@ -641,8 +644,68 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 # This is a trusted authentication coming for example from
                 # CPSExtendedAuth or from an Apache frontend that has validated
                 # a client X509 certificate.
-                return self.getUserWithAuthentication(name, None, use_login=0)
-            return self.getUserWithAuthentication(name, password, use_login=1)
+                user = self.getUserWithAuthentication(name, None, use_login=0)
+            user = self.getUserWithAuthentication(name, password, use_login=1)
+
+            # su implementation
+            su_name = self._getSwitchUserName(request)
+            if su_name:
+                user = self._switchUser(request, user, su_name)
+            return user
+
+    def _getSwitchUserName(self, request):
+        """Return the user to switch to, as requested in request.
+
+        If the returned value is None, this means that no user switch is
+        being requested. Empty strings and the like can't happen.
+        """
+        su_name = request.cookies.get(SWITCH_USER_COOKIE)
+        if su_name is not None:
+            su_name = su_name.strip()
+        return su_name or None
+
+    def _canSwitchUser(self, user):
+        """Tell if user has the right to "switch user"."""
+        return user is not None and user.has_role('Manager')
+
+    def _switchUser(self, request, user, su_name):
+        """Use permission from 'user' to switch to user with name 'su_name'.
+        """
+
+        # TODO cleaner to check a permission on the portal object
+        if not self._canSwitchUser(user):
+            logger.critical("User '%s' tried to "
+                            "take user '%s' rights but doesn't have "
+                            "permission to do so.", user, su_name)
+            raise Unauthorized("Switch user")
+
+        # XXX find a non bypassable way to log the first time only
+        # at higher level
+        logger.debug('Switching user to %s', su_name)
+        old_reqauth = getattr(request, '_auth', None)
+        request._auth = self.getTrustedAuthString()  + ' ' + su_name
+        # use again the trusted auth mechanism, this time from ourselves
+        su_user = self.getUserWithAuthentication(su_name, None, use_login=0)
+
+        # avoid loops
+        if self._canSwitchUser(su_user):
+            logger.error("Can't switch to an user that can switch users.")
+            request._auth = old_reqauth
+            return user
+
+        newSecurityManager(request, su_user)
+        return su_user
+
+    def requestUserSwitch(self, su_name, resp=None, portal=None):
+        """Do what is necessary so that next request is done as su_name.
+
+        No need to perform any security check: next request's job."""
+        if resp is None:
+            raise RuntimeError("Need a response object.")
+        if portal is None:
+           portal = getToolByName(self, 'portal_url').getPortalObject()
+        resp.setCookie(SWITCH_USER_COOKIE, su_name,
+                       path=portal.absolute_url_path())
 
     #def authorize(self, user, accessed, container, name, value, roles):
 ##         """ Check if a user is authorized to access an object.
