@@ -648,12 +648,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             user = self.getUserWithAuthentication(name, password, use_login=1)
 
             # su implementation
-            su_name = self._getSwitchUserName(request)
+            su_name = self.getSwitchUserName(request)
             if su_name:
                 user = self._switchUser(request, user, su_name)
             return user
 
-    def _getSwitchUserName(self, request):
+    def getSwitchUserName(self, request):
         """Return the user to switch to, as requested in request.
 
         If the returned value is None, this means that no user switch is
@@ -706,6 +706,15 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
            portal = getToolByName(self, 'portal_url').getPortalObject()
         resp.setCookie(SWITCH_USER_COOKIE, su_name,
                        path=portal.absolute_url_path())
+
+    def requestUserUnSwitch(self, resp=None, portal=None):
+        """Do what is necessary so that next request is done as the actual user.
+        """
+        if resp is None:
+            raise RuntimeError("Need a response object.")
+        if portal is None:
+           portal = getToolByName(self, 'portal_url').getPortalObject()
+        resp.expireCookie(SWITCH_USER_COOKIE, path=portal.absolute_url_path())
 
     #def authorize(self, user, accessed, container, name, value, roles):
 ##         """ Check if a user is authorized to access an object.
