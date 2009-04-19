@@ -39,6 +39,7 @@ from AccessControl.PermissionRole import rolesForPermissionOn
 from AccessControl.PermissionRole import _what_not_even_god_should_do
 from AccessControl.requestmethod import postonly
 from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl import Unauthorized
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
