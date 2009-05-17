@@ -1,5 +1,7 @@
-# (C) Copyright 2004-2007 Nuxeo SAS <http://nuxeo.com>
-# Author: Florent Guillaume <fg@nuxeo.com>
+# (C) Copyright 2004-2008 Nuxeo SAS <http://nuxeo.com>
+# Authors:
+# Florent Guillaume <fg@nuxeo.com>
+# M.-A. Darche <madarche@nuxeo.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -16,46 +18,50 @@
 # 02111-1307, USA.
 #
 # $Id$
-"""
-CPSUserFolder
+"""CPSUserFolder
 
 A user folder based on CPSDirectory and CPSSchemas.
 """
 
 import logging
-from ZODB.loglevels import TRACE
+import random
 from copy import deepcopy
-from types import ListType
-import base64
 
+from zope.interface import implements
+from ZODB.loglevels import TRACE
 from Acquisition import aq_base, aq_parent, aq_inner
 from Globals import InitializeClass
 from Globals import DTMLFile
-
 from AccessControl import ClassSecurityInfo
 from AccessControl.User import BasicUser, BasicUserFolder
 from AccessControl.Permissions import manage_users as ManageUsers
 from AccessControl.PermissionRole import rolesForPermissionOn
 from AccessControl.PermissionRole import _what_not_even_god_should_do
+from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl import Unauthorized
 
 from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.permissions import ManagePortal
+
 from Products.CPSUtil.PropertiesPostProcessor import PropertiesPostProcessor
-
 from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
-
 from Products.CPSUserFolder import TimeoutCache
-
-from zope.interface import implements
 from Products.CPSUserFolder.interfaces import ICPSUserFolder
 
+# The secret can be changed by monkey patching,
+# for example to be used with Apache for SSL client certificates authentication.
+# Beware, the secret should not contain any space.
+TRUSTED_AUTH_SECRET = str(random.randint(0, 1<<63))
+TRUSTED_AUTH_BASE = 'TrustedAuth-'
+
+CACHE_KEY = 'CPSUserFolder'
 
 logger = logging.getLogger('CPSUserFolder')
 
+SWITCH_USER_COOKIE = "_cps_su"
 
 _marker = []
-CACHE_KEY = 'CPSUserFolder'
 
 
 class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
@@ -410,6 +416,25 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
         return user
 
+    # CPS extension
+    security.declareProtected(ManagePortal, 'getTrustedAuthString')
+    def getTrustedAuthString(self):
+        """Return the string used to identify trusted connexions.
+
+        This is a ZEO-safe method. If ZEO is used, all the ZEO clients
+        will share the same value.
+        """
+        try:
+            # Here we use a instance variable so that each ZEO instance
+            # will have the same value.
+            trusted_auth_secret = self._trusted_auth_secret
+        except AttributeError:
+            self._trusted_auth_secret = TRUSTED_AUTH_SECRET
+            trusted_auth_secret = self._trusted_auth_secret
+
+        trusted_auth_string = TRUSTED_AUTH_BASE + trusted_auth_secret
+        return trusted_auth_string
+
     security.declareProtected(ManageUsers, 'getUser')
     def getUser(self, name):
         """Get a user by its username (which is also the id).
@@ -579,8 +604,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     def identify(self, auth):
         """Add certificate based authentication (cf SecureAuth)
         """
-        if auth and auth.lower().startswith('clcert '):
-            name = base64.decodestring(auth.split(' ')[-1])
+        trusted_auth_string = self.getTrustedAuthString()
+        if auth and auth.startswith(trusted_auth_string):
+            # auth is of the form "TrustedAuth-xxxxx uid"
+            name = auth.split(' ', 1)[-1]
             password = None
             return name, password
         else:
@@ -589,7 +616,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     def authenticate(self, name, password, request):
         """Authenticate a user from a name and password or a from
-        certificate (Apache and SecureAuth required)
+        certificate (Apache and SecureAuth required).
 
         (Called by validate).
 
@@ -605,11 +632,83 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             else:
                 return None
         else:
-            if request._auth and request._auth.lower().startswith('clcert '):
-                # A certificate as been validated by an apache frontend: no
-                # password required
-                return self.getUserWithAuthentication(name, None, use_login=0)
-            return self.getUserWithAuthentication(name, password, use_login=1)
+            trusted_auth_string = self.getTrustedAuthString()
+            if request._auth and request._auth.startswith(trusted_auth_string):
+                # This is a trusted authentication: no password is required.
+                # This is a trusted authentication coming for example from
+                # CPSExtendedAuth or from an Apache frontend that has validated
+                # a client X509 certificate.
+                user = self.getUserWithAuthentication(name, None, use_login=0)
+            user = self.getUserWithAuthentication(name, password, use_login=1)
+
+            # su implementation
+            su_name = self.getSwitchUserName(request)
+            if su_name:
+                user = self._switchUser(request, user, su_name)
+            return user
+
+    def getSwitchUserName(self, request):
+        """Return the user to switch to, as requested in request.
+
+        If the returned value is None, this means that no user switch is
+        being requested. Empty strings and the like can't happen.
+        """
+        su_name = request.cookies.get(SWITCH_USER_COOKIE)
+        if su_name is not None:
+            su_name = su_name.strip()
+        return su_name or None
+
+    def _canSwitchUser(self, user):
+        """Tell if user has the right to "switch user"."""
+        return user is not None and user.has_role('Manager')
+
+    def _switchUser(self, request, user, su_name):
+        """Use permission from 'user' to switch to user with name 'su_name'.
+        """
+
+        # TODO cleaner to check a permission on the portal object
+        if not self._canSwitchUser(user):
+            logger.critical("User '%s' tried to "
+                            "take user '%s' rights but doesn't have "
+                            "permission to do so.", user, su_name)
+            raise Unauthorized("Switch user")
+
+        # XXX find a non bypassable way to log the first time only
+        # at higher level
+        logger.debug('Switching user to %s', su_name)
+        old_reqauth = getattr(request, '_auth', None)
+        request._auth = self.getTrustedAuthString()  + ' ' + su_name
+        # use again the trusted auth mechanism, this time from ourselves
+        su_user = self.getUserWithAuthentication(su_name, None, use_login=0)
+
+        # avoid loops
+        if self._canSwitchUser(su_user):
+            logger.error("Can't switch to an user that can switch users.")
+            request._auth = old_reqauth
+            return user
+
+        newSecurityManager(request, su_user)
+        return su_user
+
+    def requestUserSwitch(self, su_name, resp=None, portal=None):
+        """Do what is necessary so that next request is done as su_name.
+
+        No need to perform any security check: next request's job."""
+        if resp is None:
+            raise RuntimeError("Need a response object.")
+        if portal is None:
+           portal = getToolByName(self, 'portal_url').getPortalObject()
+        resp.setCookie(SWITCH_USER_COOKIE, su_name,
+                       path=portal.absolute_url_path())
+
+    def requestUserUnSwitch(self, resp=None, portal=None):
+        """Do what is necessary so that next request is done as the actual user.
+        """
+        if resp is None:
+            raise RuntimeError("Need a response object.")
+        if portal is None:
+           portal = getToolByName(self, 'portal_url').getPortalObject()
+        resp.expireCookie(SWITCH_USER_COOKIE, path=portal.absolute_url_path())
 
     #def authorize(self, user, accessed, container, name, value, roles):
 ##         """ Check if a user is authorized to access an object.
@@ -924,7 +1023,7 @@ class CPSUser(BasicUser):
                 return default
             raise KeyError(key)
         value = self._entry[key]
-        if isinstance(value, ListType):
+        if isinstance(value, list):
             value = value[:]
         return value
 

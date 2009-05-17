@@ -1,4 +1,44 @@
 ===========================================================
+Package: CPSUserFolder 1.0.0
+===========================================================
+First release built by: madarche at: 2008-01-21T23:56:26
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/1.0.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@52510
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1887: Security hole in CPSUserFolder.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- The product is eligible for a 1.0 version number. 
+
+===========================================================
+Package: CPSUserFolder 0.11.0
+===========================================================
+First release built by: madarche at: 2007-10-19T12:22:21
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/0.11.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@52013
+
+Requires
+~~~~~~~~
+- Zope 2.9.7
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Protect methods against GET requests using postlony annotation.
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 0.10.3
 ===========================================================
 First release built by: madarche at: 2007-04-06T17:23:58
