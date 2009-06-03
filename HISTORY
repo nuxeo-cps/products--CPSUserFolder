@@ -1,4 +1,24 @@
 ===========================================================
+Package: CPSUserFolder 1.1.0-rel1271525924
+===========================================================
+First release built by: gracinet at: 2009-06-03T16:30:27
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/1.1.0-rel1271525924
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/branches/rel1271525924@53641
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+- #1993: switch user facility
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 1.0.0
 ===========================================================
 First release built by: madarche at: 2008-01-21T23:56:26
