@@ -2,6 +2,7 @@
 # Authors:
 # Florent Guillaume <fg@nuxeo.com>
 # M.-A. Darche <madarche@nuxeo.com>
+# Georges Racinet <georges@racinet.fr>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as published
@@ -113,6 +114,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Roles directory"},
         {'id': 'groups_members_field', 'type': 'string', 'mode': 'w',
          'label': "Groups directory: members field"},
+        {'id': 'groups_super_groups_field', 'type': 'string', 'mode': 'w',
+         'label': "Groups directory: super groups field"},
+        {'id': 'groups_sub_groups_field', 'type': 'string', 'mode': 'w',
+         'label': "Groups directory: sub groups field"},
         {'id': 'roles_members_field', 'type': 'string', 'mode': 'w',
          'label': "Roles directory: members field"},
         {'id': 'is_role_authenticated_empty', 'type': 'boolean', 'mode': 'w',
@@ -130,6 +135,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     groups_dir = 'groups'
     roles_dir = 'roles'
     groups_members_field  = 'members'
+    groups_super_groups_field = ''
+    groups_sub_groups_field = ''
     roles_members_field = 'members'
     is_role_authenticated_empty = True
     is_role_anonymous_empty = True
@@ -264,6 +271,71 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         user._setUserFolder(self)
         return user
 
+    security.declarePrivate('_computeGroupsFor')
+    def _computeGroupsFor(self, entry, member_of_field=None,
+                          groups_dir=None, ancestors=()):
+        """Return a pair (direct groups, recursed groups) from an entry.
+
+        recursed groups is a set, to whom direct groups belong.
+        kwargs are meant for recursion
+
+        Performance isn't a big concern, since this will be cached in the
+        CPSUser instance.
+        """
+
+        if member_of_field is None:
+            member_of_field = self.users_groups_field
+        groups = entry[member_of_field]
+        # TODO mettre try except la
+        sgf = self.groups_super_groups_field
+        if not sgf:
+            return groups, groups
+
+        if groups_dir is None:
+            groups_dir = self._getGroupsDirectory()
+
+        recursed = set(groups)
+        for group in groups:
+            if group in ancestors:
+                logger.warning(
+                    "Loop in recursive groups upwards computation : went "
+                    "through %s, got '%s' again. Stopping in this branch",
+                    ancestors, group)
+                continue
+            ancestors += (group,)
+            gentry = groups_dir._getEntry(group)
+            recursed.update(
+                self._computeGroupsFor(gentry, groups_dir=groups_dir,
+                                       member_of_field=sgf,
+                                       ancestors=ancestors)[1])
+        return groups, recursed
+
+    def _computeGroupMembers(self, entry, ancestors=(),
+                             groups_dir=None, recurse=False):
+
+        direct = entry.get(self.groups_members_field, ())
+        sgf = self.groups_sub_groups_field
+        if not recurse or not sgf:
+            return direct
+
+        if groups_dir is None:
+            groups_dir = self._getGroupsDirectory()
+
+        members = set(direct)
+        for group in entry.get(sgf, ()):
+            if group in ancestors:
+                logger.warning(
+                    "Loop in recursive groups downwards computation : went "
+                    " through %s, got '%s' again. Stopping in this branch",
+                    ancestors, group)
+                continue
+            ancestors += (group,)
+            gentry = groups_dir._getEntry(group)
+            members.update(self._computeGroupMembers(
+                gentry, ancestors=ancestors, groups_dir=groups_dir,
+                recurse=True))
+        return members
+
     #
     # Public UserFolder object interface
     #
@@ -387,11 +459,12 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                          self.users_roles_field)
             roles = ()
         try:
-            groups = entry[self.users_groups_field]
+            groups, recursed_groups = self._computeGroupsFor(entry)
         except KeyError:
             logger.debug("User %s has no field %s", userid,
                          self.users_groups_field)
             groups = ()
+            recursed_groups = ()
         if password is None:
             # XXX no raise if users_password_field has not be set
             if self.users_password_field != '':
@@ -404,6 +477,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             'password': password,
             'roles': roles,
             'groups': groups,
+            'recursed_groups' : recursed_groups,
             'entry': entry,
             })
         user_info = user._getInitUserInfo()
@@ -570,8 +644,15 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         return dir.listEntryIds()
 
     security.declareProtected(ManageUsers, 'getGroupById')
-    def getGroupById(self, groupname, default=_marker):
-        """Return the given group"""
+    def getGroupById(self, groupname, default=_marker, recurse_members=False):
+        """Return the given group.
+
+        Transient Group instances aren't in cache.
+        That's the reason why recursing on subgroups (potentially very costly)
+        has to be turned on explicitely. Not very satisfying compromise, but
+        don't want to add a reference to acl_users in the group object for
+        lazy computation.
+        """
         groups_dir = self._getGroupsDirectory()
         if groups_dir is not None:
             if not groupname.startswith('role:'):
@@ -581,7 +662,20 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         return default
                     raise KeyError, groupname
 
-                group_members = group_entry.get(self.groups_members_field, ())
+                group_members = self._computeGroupMembers(
+                    group_entry, recurse=recurse_members, groups_dir=groups_dir)
+
+                f = self.groups_sub_groups_field
+                if f:
+                    subgroups = group_entry.get(f, ())
+                else:
+                    subgroups = ()
+
+                f = self.groups_super_groups_field
+                if f:
+                    supergroups = group_entry.get(f, ())
+                else:
+                    supergroups = ()
 
             else:
                 # Special groups must be group instance so that CPSSubscriptions
@@ -589,6 +683,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                 # empty by default to avoid spamming a uge quantity of members
                 # by error
 
+                supergroups = ()
+                subgroups = () # maybe put all groups ?
                 emptyness = {
                     "role:Authenticated": self.is_role_authenticated_empty,
                     "role:Anonymous": self.is_role_anonymous_empty,
@@ -599,7 +695,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                     group_members = self.getUserNames()
 
 
-            return Group(groupname, group_members)
+            return Group(groupname, group_members,
+                         supergroups=supergroups, subgroups=subgroups)
 
         else:
             raise ValueError, "The directory %s doesn't exist" % self.groups_dir
@@ -945,7 +1042,8 @@ class CPSUser(BasicUser):
     security = ClassSecurityInfo()
     security.declareObjectPublic()
 
-    def __init__(self, id, password=None, roles=(), groups=(), entry=None):
+    def __init__(self, id, password=None, roles=(), groups=(),
+                 recursed_groups=(), entry=None):
         self._id = id
         self._password = password
         roles = tuple(roles)
@@ -955,6 +1053,7 @@ class CPSUser(BasicUser):
             roles += ('Authenticated',)
         self._roles = roles
         self._groups = tuple(groups)
+        self._recursed_groups = tuple(recursed_groups) or tuple(groups)
         self._entry = entry
 
     def _getInitUserInfo(self):
@@ -1016,10 +1115,9 @@ class CPSUser(BasicUser):
         This includes groups of groups, and special groups
         like role:Anonymous and role:Authenticated.
 
-        Groups of groups are not implemented yet.
         """
-        return self.getGroups() + ('role:Anonymous', 'role:Authenticated')
-        #raise NotImplementedError
+        return self._recursed_groups + (
+            'role:Anonymous', 'role:Authenticated')
 
     # CPS extension
     security.declarePublic('getProperty')
@@ -1216,9 +1314,11 @@ class Group:
     NuxUserGroups and LDAPUserGroupsFolder code
     """
 
-    def __init__(self, id, users):
+    def __init__(self, id, users, subgroups=(), supergroups=()):
         self.id  = id
         self.users = users
+        self.subgroups = subgroups
+        self.supergroups = supergroups
 
     def __repr__(self):
         # I hope no code assumes that __repr__ is the groupname
@@ -1226,6 +1326,12 @@ class Group:
 
     def getUsers(self):
         return self.users
+
+    def getSubGroups(self):
+        return self.subgroups
+
+    def getSuperGroups(self):
+        return self.supergroups
 
     def addUsers(self, userids):
         raise NotImplementedError

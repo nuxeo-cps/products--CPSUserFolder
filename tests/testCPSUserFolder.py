@@ -95,8 +95,23 @@ class TestCPSUser(unittest.TestCase):
         entry = {'givenName': 'James', 'sn': 'Bond',
                  'list': ['a', 'b']}
         password = 'secret'
-        user = CPSUser(id, password, roles, groups, entry)
+        user = CPSUser(id, password, roles, groups, entry=entry)
         return user
+
+    def makeUserWithRecursiveGroups(self):
+        # somegroup is now in the recursive groups. Allows to check security
+        # with the same test
+        id = 'someuser'
+        roles = ['SomeRole']
+        groups = ['directgroup']
+        recursed = set(['somegroup', 'directgroup'])
+        entry = {'givenName': 'James', 'sn': 'Bond',
+                 'list': ['a', 'b']}
+        password = 'secret'
+        user = CPSUser(id, password, roles, groups, entry=entry,
+                       recursed_groups=recursed)
+        return user
+
 
     def makeFolders(self):
         self.root = Folder('root')
@@ -132,7 +147,12 @@ class TestCPSUser(unittest.TestCase):
         self.assert_(l1 is not l2)
 
     def test_getRolesInContext(self):
-        user = self.makeUser()
+        self.assert_getRolesInContext(self.makeUser())
+
+    def test_getRolesInContextRecursiveGroups(self):
+        self.assert_getRolesInContext(self.makeUserWithRecursiveGroups())
+
+    def assert_getRolesInContext(self, user):
         root = self.makeFolders()
         fold = root.fold
         ob = fold.ob
@@ -274,6 +294,15 @@ class TestCPSUserFolder(unittest.TestCase):
             users_roles_field='roles',
             users_groups_field='groups',
             )
+        resetAllCaches()
+
+    def makeWithDirsRecursiveGroups(self):
+        self.makeWithDirs()
+        aclu = self.portal.aclu
+        aclu.manage_changeProperties(groups_super_groups_field='super_groups',
+                                     groups_sub_groups_field='sub_groups')
+        gdir = self.portal.portal_directories.groups
+        gdir.blank['super_groups'] = ()
         resetAllCaches()
 
     def test_userfolder_API(self):
@@ -445,6 +474,56 @@ class TestCPSUserFolder(unittest.TestCase):
         # this should pass
         res = aclu.getGroupById('rodents')
         self.assertEquals(res.id, 'rodents')
+
+    def test_recursive_groups(self):
+        self.makeWithDirsRecursiveGroups()
+        portal = self.portal
+        aclu = portal.aclu
+        gdir = portal.portal_directories.groups
+        mdir = portal.portal_directories.members
+
+        mdir.createEntry(dict(uid='mickey', groups=('rodents',)))
+        gdir.createEntry(dict(group='rodents', members=['mickey'],
+                              super_groups=('mammals',)))
+        gdir.createEntry(dict(group='mammals', super_groups=('animals',),))
+        gdir.createEntry(dict(group='animals'))
+        mickey = mdir._getEntry('mickey')
+        self.assertEquals(aclu._computeGroupsFor(mickey),
+                          (('rodents',),
+                           set(['rodents', 'mammals', 'animals'])))
+
+        # loop detection. Don't want the app to be broken by end user so easily
+        # cf warning in log to understand the assertion
+        gdir.editEntry(dict(group='animals', super_groups=('rodents',)))
+        self.assertEquals(aclu._computeGroupsFor(mickey),
+                          (('rodents',),
+                           set(['rodents', 'mammals', 'animals'])))
+        gdir.editEntry(dict(group='animals', super_groups=()))
+
+        # Group API and sub/super groups
+        #
+        # Note that consistency of the sub/super group duality is
+        # expected to be maintained by the directories (same as member/group)
+
+        # Sub/super groups are first level (no recursion)
+        gdir.editEntry(dict(group='animals', sub_groups=('mammals', )))
+        gdir.editEntry(dict(group='mammals', sub_groups=('rodents', )))
+        mammals = aclu.getGroupById('mammals')
+        self.assertEquals(mammals.getSubGroups(), ('rodents',))
+        self.assertEquals(mammals.getSuperGroups(), ('animals',))
+        animals = aclu.getGroupById('animals')
+        self.assertEquals(animals.getSubGroups(), ('mammals',))
+
+        # recursive behaviour for members
+        animals = aclu.getGroupById('animals', recurse_members=True)
+        self.assertEquals(animals.getUsers(), set(['mickey']))
+
+        # loop detection. Don't want the app to be broken by end user so easily
+        # cf warning in log to understand the assertion
+        gdir.editEntry(dict(group='rodents', sub_groups=('animals',)))
+        animals = aclu.getGroupById('animals', recurse_members=True)
+        self.assertEquals(animals.getUsers(), set(['mickey']))
+        gdir.editEntry(dict(group='rodents', sub_groups=()))
 
     def test_user_not_shared(self):
         # Ensure that two requests for the same user return a different object.
