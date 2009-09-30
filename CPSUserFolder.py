@@ -271,70 +271,93 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
         user._setUserFolder(self)
         return user
 
-    security.declarePrivate('_computeGroupsFor')
-    def _computeGroupsFor(self, entry, member_of_field=None,
-                          groups_dir=None, ancestors=()):
+    #
+    # Recursive groups behaviour
+    #
+
+    security.declarePrivate('recurseGroups')
+    def recurseGroups(self, group_id, recursion_field,
+                      collect_field=None, group_entry=None,
+                      groups_dir=None, ancestors=None):
+        """Perform recursion for group_id along recursion_field.
+
+        Optional collect_field allows to collect data from a given field
+        (typically, members) rather than group_id (must be iterable).
+        Recursion can be turned off by supplying an empty recursion_field.
+
+        group_entry and groups_dir can be provided if already available
+        other kwargs are internal for recursion.
+        """
+
+        if group_entry is None:
+            if groups_dir is None:
+                groups_dir = self._getGroupsDirectory()
+            try:
+                group_entry = groups_dir._getEntry(group_id)
+            except KeyError, e:
+                logger.warning(
+                    "Reference to non-existent group '%s' while recursing "
+                    "Current chain %s", group_id, ancestors)
+                return ()
+
+        if collect_field is None:
+            recursed = set([group_id])
+        else:
+            recursed = set(group_entry[collect_field])
+
+        if not recursion_field:
+            return recursed
+
+        if ancestors is None:
+            ancestors = [group_id]
+        else:
+            ancestors.append(group_id)
+
+        nextgroups = group_entry[recursion_field]
+        for group in nextgroups:
+            if group in ancestors:
+                logger.warning(
+                    "Loop while recursing on groups along '%s' field: went "
+                    "through %s, got '%s' again. Stopping in this branch",
+                    recursion_field, ancestors, group)
+                continue
+            recursed.update(self.recurseGroups(group, recursion_field,
+                                               collect_field=collect_field,
+                                               groups_dir=groups_dir,
+                                               ancestors=ancestors))
+        ancestors.pop()
+        return recursed
+
+    security.declarePrivate('computeMemberGroupsRecursive')
+    def computeMemberGroupsRecursive(self, entry):
         """Return a pair (direct groups, recursed groups) from an entry.
 
-        recursed groups is a set, to whom direct groups belong.
-        kwargs are meant for recursion
+        recursed groups is a set, to whom direct groups also belong.
 
         Performance isn't a big concern, since this will be cached in the
         CPSUser instance.
         """
 
-        if member_of_field is None:
-            member_of_field = self.users_groups_field
-        groups = entry[member_of_field]
-        # TODO mettre try except la
+        groups = entry[self.users_groups_field]
         sgf = self.groups_super_groups_field
-        if not sgf:
+        if not sgf: # No sub/super group behaviour
             return groups, groups
 
-        if groups_dir is None:
-            groups_dir = self._getGroupsDirectory()
-
-        recursed = set(groups)
+        groups_dir = self._getGroupsDirectory()
+        recursed = set()
         for group in groups:
-            if group in ancestors:
-                logger.warning(
-                    "Loop in recursive groups upwards computation : went "
-                    "through %s, got '%s' again. Stopping in this branch",
-                    ancestors, group)
-                continue
-            ancestors += (group,)
-            gentry = groups_dir._getEntry(group)
-            recursed.update(
-                self._computeGroupsFor(gentry, groups_dir=groups_dir,
-                                       member_of_field=sgf,
-                                       ancestors=ancestors)[1])
+            recursed.update(self.recurseGroups(group, sgf))
         return groups, recursed
 
-    def _computeGroupMembers(self, entry, ancestors=(),
-                             groups_dir=None, recurse=False):
+    security.declarePrivate('computeGroupMembersRecursive')
+    def computeGroupMembersRecursive(self, group_id, group_entry,
+                                     recurse=False, groups_dir=None):
 
-        direct = entry.get(self.groups_members_field, ())
-        sgf = self.groups_sub_groups_field
-        if not recurse or not sgf:
-            return direct
-
-        if groups_dir is None:
-            groups_dir = self._getGroupsDirectory()
-
-        members = set(direct)
-        for group in entry.get(sgf, ()):
-            if group in ancestors:
-                logger.warning(
-                    "Loop in recursive groups downwards computation : went "
-                    " through %s, got '%s' again. Stopping in this branch",
-                    ancestors, group)
-                continue
-            ancestors += (group,)
-            gentry = groups_dir._getEntry(group)
-            members.update(self._computeGroupMembers(
-                gentry, ancestors=ancestors, groups_dir=groups_dir,
-                recurse=True))
-        return members
+        recursion_field = recurse and self.groups_sub_groups_field or ''
+        return list(self.recurseGroups(group_id, recursion_field,
+                                       collect_field=self.groups_members_field,
+                                       group_entry=group_entry,
+                                       groups_dir=groups_dir))
 
     #
     # Public UserFolder object interface
@@ -459,7 +482,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                          self.users_roles_field)
             roles = ()
         try:
-            groups, recursed_groups = self._computeGroupsFor(entry)
+            groups, recursed_groups = self.computeMemberGroupsRecursive(entry)
         except KeyError:
             logger.debug("User %s has no field %s", userid,
                          self.users_groups_field)
@@ -662,8 +685,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                         return default
                     raise KeyError, groupname
 
-                group_members = self._computeGroupMembers(
-                    group_entry, recurse=recurse_members, groups_dir=groups_dir)
+                group_members = self.computeGroupMembersRecursive(
+                        groupname, group_entry,
+                        recurse=recurse_members, groups_dir=groups_dir)
 
                 f = self.groups_sub_groups_field
                 if f:

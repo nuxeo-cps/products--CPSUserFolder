@@ -484,18 +484,19 @@ class TestCPSUserFolder(unittest.TestCase):
 
         mdir.createEntry(dict(uid='mickey', groups=('rodents',)))
         gdir.createEntry(dict(group='rodents', members=['mickey'],
-                              super_groups=('mammals',)))
+                              super_groups=('mammals',),
+                              sub_groups=()))
         gdir.createEntry(dict(group='mammals', super_groups=('animals',),))
         gdir.createEntry(dict(group='animals'))
         mickey = mdir._getEntry('mickey')
-        self.assertEquals(aclu._computeGroupsFor(mickey),
+        self.assertEquals(aclu.computeMemberGroupsRecursive(mickey),
                           (('rodents',),
                            set(['rodents', 'mammals', 'animals'])))
 
         # loop detection. Don't want the app to be broken by end user so easily
         # cf warning in log to understand the assertion
         gdir.editEntry(dict(group='animals', super_groups=('rodents',)))
-        self.assertEquals(aclu._computeGroupsFor(mickey),
+        self.assertEquals(aclu.computeMemberGroupsRecursive(mickey),
                           (('rodents',),
                            set(['rodents', 'mammals', 'animals'])))
         gdir.editEntry(dict(group='animals', super_groups=()))
@@ -516,13 +517,13 @@ class TestCPSUserFolder(unittest.TestCase):
 
         # recursive behaviour for members
         animals = aclu.getGroupById('animals', recurse_members=True)
-        self.assertEquals(animals.getUsers(), set(['mickey']))
+        self.assertEquals(animals.getUsers(), ['mickey'])
 
         # loop detection. Don't want the app to be broken by end user so easily
         # cf warning in log to understand the assertion
         gdir.editEntry(dict(group='rodents', sub_groups=('animals',)))
         animals = aclu.getGroupById('animals', recurse_members=True)
-        self.assertEquals(animals.getUsers(), set(['mickey']))
+        self.assertEquals(animals.getUsers(), ['mickey'])
         gdir.editEntry(dict(group='rodents', sub_groups=()))
 
     def test_user_not_shared(self):
