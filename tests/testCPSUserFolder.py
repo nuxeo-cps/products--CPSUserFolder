@@ -27,6 +27,8 @@ from Interface import Interface
 from Interface.Verify import verifyClass
 from OFS.Folder import Folder as OFS_Folder
 
+from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
+
 from Products.CPSUserFolder.TimeoutCache import resetAllCaches
 
 from Products.CPSUserFolder.CPSUserFolder import CPSUserFolder
@@ -71,6 +73,55 @@ class FakeDirectory(Folder):
     _hasEntry = hasEntry
     def listEntryIds(self):
         return self.entries.keys()
+    def searchEntries(self, return_fields=None, **kw):
+        res = []
+        # find entries
+        for eid, entry in self.entries.items():
+            for k, v in kw.items():
+                # GR list behaviour expected from CPSUserFolder is alternatives
+                # don't know if that's right (code wasn't tested before)
+                # maybe too much LDAP oriented ?
+                if (isinstance(v, list) and entry[k] in v) or \
+                  entry[k] == v:
+                    res.append((eid, entry))
+
+        if return_fields is None:
+            return [eid for eid, _ in res]
+        if return_fields == ['*']:
+            return res
+        raise NotImplementedError
+    _searchEntries = searchEntries
+
+class FakeDirectoryNormalizing(FakeDirectory):
+    """A simple normalization case: case independency"""
+
+    password_field = None
+
+    def __init__(self, *args, **kwargs):
+        pw_field = kwargs.pop('password_field', None)
+        if pw_field is not None:
+            self.password_field = pw_field
+        FakeDirectory.__init__(self, *args, **kwargs)
+
+    def getEntry(self, id, default=_marker):
+        for k, v in self.entries.items():
+            if id.lower() == k.lower():
+                return v
+        else:
+            if default is _marker:
+                raise KeyError(k)
+            else:
+                return default
+    _getEntry = getEntry
+
+    def getEntryAuthenticated(self, id, password):
+        entry = self.getEntry(id)
+        if password != entry[self.password_field]:
+            raise AuthenticationFailed
+        return entry
+
+    def isAuthenticating(self):
+        return bool(self.password_field)
 
 
 def sorted(l):
@@ -537,10 +588,162 @@ class TestCPSUserFolder(unittest.TestCase):
         user2 = aclu.getUserById('bob')
         self.assert_(user1 is not user2, "User objets are the same")
 
+class TestCPSUserFolderIdNormalization(unittest.TestCase):
+    """Test scenarios where the user input login can be different from id."""
+
+    def makeWithDirs(self):
+        # Make a portal, aclu, and fake directories.
+        portal = self.portal = Folder('portal')
+        dirtool = portal.portal_directories = Folder('portal_directories')
+        dirtool.members = FakeDirectoryNormalizing(
+            'members', 'uid', {'pw': 'secret',
+                               'roles': [],
+                               'groups': [],
+                               'sn': None,
+                               }, password_field='pw')
+        dirtool.groups = FakeDirectory(
+            'groups', 'group', {'members': ()})
+        aclu = portal.aclu = CPSUserFolder()
+        aclu.manage_changeProperties(
+            users_dir='members',
+            users_password_field='pw',
+            users_roles_field='roles',
+            users_groups_field='groups',
+            )
+        resetAllCaches()
+
+    def test_Normalization(self):
+        self.makeWithDirs()
+        aclu = self.portal.aclu
+        mdir = self.portal.portal_directories.members
+
+        entry = {'uid': 'DonalD',
+                 'pw': 'secretduck',
+                 'roles': ('Loser',),
+                 'groups': ('ducks',),
+                 'sn': 'Donald',
+                 }
+        mdir.createEntry(entry)
+        self.assertTrue(mdir.getEntry('donald') is not None)
+
+        user = aclu.getUser('donald')
+        # id has been corrected
+        self.assertEquals(user.getId(), 'DonalD')
+        # id is now in cache
+        self.assertEquals(aclu._getUserIdFromLoginCache('donald'), 'DonalD')
+
+        # second run produces the same result, but from user cache
+        # this also chekcs that the caches themselves work
+        # changing the entry, the cached entry won't change
+        entry['groups'] = ('anime',)
+        mdir.editEntry(entry)
+        user2 = aclu.getUser('donald')
+        self.assertEquals(user.getId(), 'DonalD')
+        self.assertEquals(user.getGroups(), user2.getGroups())
+
+    def test_normalizationPassword(self):
+        # same as test_Normalization, with passwords
+        # potentially different code areas will be executed
+        self.makeWithDirs()
+        aclu = self.portal.aclu
+        mdir = self.portal.portal_directories.members
+
+        entry = {'uid': 'DonalD',
+                 'pw': 'secretduck',
+                 'roles': ('Loser',),
+                 'groups': ('ducks',),
+                 'sn': 'Donald',
+                 }
+        mdir.createEntry(entry)
+        self.assertTrue(mdir.getEntry('donald') is not None)
+
+        user = aclu.getUserWithAuthentication('donald', 'secretduck')
+        # id has been corrected
+        self.assertEquals(user.getId(), 'DonalD')
+        # id is now in cache
+        self.assertEquals(aclu._getUserIdFromLoginCache('donald'), 'DonalD')
+
+        # second run produces the same result, but from user cache
+        # this also chekcs that the caches themselves work
+        # changing the entry, the cached entry won't change
+        entry['groups'] = ('anime',)
+        mdir.editEntry(entry)
+        user2 = aclu.getUserWithAuthentication('donald', 'secretduck')
+        self.assertEquals(user.getId(), 'DonalD')
+        self.assertEquals(user.getGroups(), user2.getGroups())
+
+    def test_normalizationPasswordLoginField(self):
+        # same as test_Normalization, with passwords and
+        # login field being different from id field
+        self.makeWithDirs()
+        aclu = self.portal.aclu
+        aclu.users_login_field = 'sn'
+        mdir = self.portal.portal_directories.members
+
+        entry = {'uid': 'dduck',
+                 'pw': 'secretduck',
+                 'roles': ('Loser',),
+                 'groups': ('ducks',),
+                 'sn': 'Donald',
+                 }
+        mdir.createEntry(entry)
+
+        user = aclu.getUserWithAuthentication('Donald', 'secretduck',
+                                              use_login=True)
+        # id has been corrected
+        self.assertEquals(user.getId(), 'dduck')
+        # id is now in cache
+        self.assertEquals(aclu._getUserIdFromLoginCache('Donald'), 'dduck')
+
+        # second run produces the same result, but from user cache
+        # this also chekcs that the caches themselves work
+        # changing the entry, the cached entry won't change
+        entry['groups'] = ('anime',)
+        mdir.editEntry(entry)
+        user2 = aclu.getUserWithAuthentication('Donald', 'secretduck',
+                                               use_login=True)
+        self.assertEquals(user.getId(), 'dduck')
+        self.assertEquals(user.getGroups(), user2.getGroups())
+
+    def test_normalizationLoginField(self):
+        # same as test_Normalization, with no passwords, with
+        # login field being different from id field
+        self.makeWithDirs()
+        aclu = self.portal.aclu
+        aclu.users_login_field = 'sn'
+        mdir = self.portal.portal_directories.members
+
+        entry = {'uid': 'dduck',
+                 'pw': 'secretduck',
+                 'roles': ('Loser',),
+                 'groups': ('ducks',),
+                 'sn': 'Donald',
+                 }
+        mdir.createEntry(entry)
+
+        user = aclu.getUserWithAuthentication('Donald', None,
+                                              use_login=True)
+        # id has been corrected
+        self.assertEquals(user.getId(), 'dduck')
+        # id is now in cache
+        self.assertEquals(aclu._getUserIdFromLoginCache('Donald'), 'dduck')
+
+        # second run produces the same result, but from user cache
+        # this also chekcs that the caches themselves work
+        # changing the entry, the cached entry won't change
+        entry['groups'] = ('anime',)
+        mdir.editEntry(entry)
+        user2 = aclu.getUserWithAuthentication('Donald', None,
+                                               use_login=True)
+        self.assertEquals(user.getId(), 'dduck')
+        self.assertEquals(user.getGroups(), user2.getGroups())
+
+
 def test_suite():
     return unittest.TestSuite((
         unittest.makeSuite(TestCPSUserFolder),
         unittest.makeSuite(TestCPSUser),
+        unittest.makeSuite(TestCPSUserFolderIdNormalization),
         ))
 
 if __name__ == '__main__':

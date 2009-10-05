@@ -3,6 +3,7 @@ Requires
 -
 New features
 ~~~~~~~~~~~~
+- #2039: support for case insensitivy/normalisation of user id
 - #1402: groups of groups
 - #1993: switch user facility
 Bug fixes

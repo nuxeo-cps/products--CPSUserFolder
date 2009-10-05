@@ -81,6 +81,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     Several internal caches are used:
       login -> id
         there may be several of those when several logins exist
+        or simply a normalisation is needed (case problems, accented chars...)
       id -> user_info = {'password', 'roles', 'groups', 'entry'}
         the password may be None if no password has yet been checked
     """
@@ -390,13 +391,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             auth_field = dir_id_field
 
         # Check cache for userid
-        if auth_field == dir_id_field:
+        userid = self._getUserIdFromLoginCache(name)
+        if userid is not None:
+            logger.log(TRACE, "Getting info from cache name=%s -> "
+                       "userid=%s", name, userid)
+
+        if userid is None and auth_field == dir_id_field:
             userid = name
-        else:
-            userid = self._getUserIdFromLoginCache(name)
-            if userid is not None:
-                logger.log(TRACE, "Getting info from cache name=%s -> "
-                           "userid=%s", name, userid)
 
         # Check cache for user
         user_is_from_cache = False
@@ -426,39 +427,41 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
                          e.__class__.__name__, e, dir.getId())
             return None
 
+        def get_entry(eid):
+            """Dispatches with or without auth."""
+            if password is not None:
+                return dir.getEntryAuthenticated(eid, password)
+            else:
+                return dir._getEntry(eid)
+
         # Get entry authenticated
         entry = None
         try:
             if userid is not None:
-                if password is not None:
-                    entry = dir.getEntryAuthenticated(userid, password)
-                else:
-                    entry = dir._getEntry(userid)
-            else:
-                if password is not None:
-                    # We'll have to refetch the entry authenticated.
-                    return_fields = None
-                else:
-                    # We can directly fetch the entry.
-                    return_fields = ['*']
-                res = dir._searchEntries(return_fields=return_fields,
-                                        **{auth_field: [name]})
+                entry = get_entry(userid)
+                actualid = entry[dir_id_field]
+                if userid != actualid:
+                    # sadly, we have to redo the query, because of
+                    # cross-field computations and/or meta directories
+                    # that could have returned e.g, no role or group
+                    entry = get_entry(actualid)
+                userid = actualid
+            else: # happens if login field is not id field and cache empty
+                # no return field: we'll have to refetch anyway once we
+                # are sure of the entry id
+                res = dir._searchEntries(**{auth_field:[name]})
                 if not res:
                     logger.log(TRACE, "No result for %s=%s", auth_field, name)
                     # XXX do negative cache for login
                     return None
                 if len(res) > 1:
-                    logger.log(TRACE, "Search on %s=%s returned several "
+                    logger.warning("Search on %s=%s returned several "
                                "entries, confusing authentication rejected",
                                auth_field, name)
                     return None
-                if password is not None:
-                    # Refetch the entry authenticated.
-                    userid = res[0]
-                    entry = dir.getEntryAuthenticated(userid, password)
-                else:
-                    # Use the entry that the search returned.
-                    userid, entry = res[0]
+                # Always refetch for meta/cross field consistencies
+                userid = res[0]
+                entry = get_entry(userid)
         except AuthenticationFailed:
             logger.log(TRACE, "Authentication failed for user %s", userid)
             entry = None
@@ -505,10 +508,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             })
         user_info = user._getInitUserInfo()
 
-        # Set to cache
-        # (the cache keeps existing timeouts)
-        if auth_field != dir_id_field:
-            self._setUserIdToLoginCache(name, userid)
+        # Set to cache (the cache keeps existing timeouts)
+        # This is systematical (better for perf to have it even if name==userid
+        # than to start with a query with no result
+        self._setUserIdToLoginCache(name, userid)
         self._setUserToIdCache(userid, user_info)
         logger.debug("Setting user %s into cache", userid)
 
