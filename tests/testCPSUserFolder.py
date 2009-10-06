@@ -28,6 +28,8 @@ from Interface.Verify import verifyClass
 from OFS.Folder import Folder as OFS_Folder
 
 from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
+from Products.CPSDirectory.tests.fakeCps import FakeDirectory
+from Products.CPSDirectory.tests.fakeCps import FakeDirectoryNormalizing
 
 from Products.CPSUserFolder.TimeoutCache import resetAllCaches
 
@@ -35,93 +37,9 @@ from Products.CPSUserFolder.CPSUserFolder import CPSUserFolder
 from Products.CPSUserFolder.CPSUserFolder import CPSUser
 
 
-
 class Folder(OFS_Folder):
     def __init__(self, id):
-        self._setId(id)
         OFS_Folder.__init__(self)
-
-_marker = object()
-class FakeDirectory(Folder):
-    def __init__(self, id, id_field, blank):
-        Folder.__init__(self, id)
-        self.id_field = id_field
-        self.blank = blank
-        self.entries = {}
-    def getEntry(self, id, default=_marker):
-        try:
-            return self.entries[id]
-        except KeyError:
-            if default is _marker:
-                raise
-            else:
-                return default
-    _getEntry = getEntry
-    def createEntry(self, entry):
-        new = deepcopy(self.blank)
-        new.update(entry)
-        self.entries[entry[self.id_field]] = new
-    _createEntry = createEntry
-    def editEntry(self, entry):
-        self.entries[entry[self.id_field]].update(entry)
-    _editEntry = editEntry
-    def deleteEntry(self, id):
-        del self.entries[id]
-    _deleteEntry = deleteEntry
-    def hasEntry(self, id):
-        return self.entries.has_key(id)
-    _hasEntry = hasEntry
-    def listEntryIds(self):
-        return self.entries.keys()
-    def searchEntries(self, return_fields=None, **kw):
-        res = []
-        # find entries
-        for eid, entry in self.entries.items():
-            for k, v in kw.items():
-                # GR list behaviour expected from CPSUserFolder is alternatives
-                # don't know if that's right (code wasn't tested before)
-                # maybe too much LDAP oriented ?
-                if (isinstance(v, list) and entry[k] in v) or \
-                  entry[k] == v:
-                    res.append((eid, entry))
-
-        if return_fields is None:
-            return [eid for eid, _ in res]
-        if return_fields == ['*']:
-            return res
-        raise NotImplementedError
-    _searchEntries = searchEntries
-
-class FakeDirectoryNormalizing(FakeDirectory):
-    """A simple normalization case: case independency"""
-
-    password_field = None
-
-    def __init__(self, *args, **kwargs):
-        pw_field = kwargs.pop('password_field', None)
-        if pw_field is not None:
-            self.password_field = pw_field
-        FakeDirectory.__init__(self, *args, **kwargs)
-
-    def getEntry(self, id, default=_marker):
-        for k, v in self.entries.items():
-            if id.lower() == k.lower():
-                return v
-        else:
-            if default is _marker:
-                raise KeyError(k)
-            else:
-                return default
-    _getEntry = getEntry
-
-    def getEntryAuthenticated(self, id, password):
-        entry = self.getEntry(id)
-        if password != entry[self.password_field]:
-            raise AuthenticationFailed
-        return entry
-
-    def isAuthenticating(self):
-        return bool(self.password_field)
 
 
 def sorted(l):
@@ -482,6 +400,7 @@ class TestCPSUserFolder(unittest.TestCase):
         # wich is driven by 'checkViewEntryAllowed()'
         acl_entry_view_roles_c = []
 
+        _marker = object()
         def getEntry(id, default=_marker):
             # faking security
             from AccessControl import getSecurityManager
