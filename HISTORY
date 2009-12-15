@@ -1,4 +1,26 @@
 ===========================================================
+Package: CPSUserFolder 1.1.0
+===========================================================
+First release built by: gracinet at: 2009-12-15T12:28:46
+SVN Tag: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/tags/1.1.0
+Build from: https://svn.nuxeo.org/pub/CPS3/products/CPSUserFolder/trunk@54101
+
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+- #2039: support for case insensitivy/normalisation of user id
+- #1402: groups of groups
+- #1993: switch user facility
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 1.0.0
 ===========================================================
 First release built by: madarche at: 2008-01-21T23:56:26
