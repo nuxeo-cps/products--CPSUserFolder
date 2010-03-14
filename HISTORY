@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSUserFolder 1.1.1
+===========================================================
+First release built by: gracinet at: 2010-03-14T16:39:50
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- Switch to mercurial DCVS and hgbundler release manager
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 1.1.0
 ===========================================================
 First release built by: gracinet at: 2009-12-15T12:28:46
