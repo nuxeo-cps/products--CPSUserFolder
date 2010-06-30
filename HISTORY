@@ -1,4 +1,21 @@
 ===========================================================
+Package: CPSUserFolder 1.1.2
+===========================================================
+First release built by: gracinet at: 2010-06-30T02:36:36
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #1968: declare a group email field
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 1.1.1
 ===========================================================
 First release built by: gracinet at: 2010-03-14T16:39:50
