@@ -119,6 +119,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Groups directory: super groups field"},
         {'id': 'groups_sub_groups_field', 'type': 'string', 'mode': 'w',
          'label': "Groups directory: sub groups field"},
+        {'id': 'groups_email_field', 'type': 'string', 'mode': 'w',
+         'label': "Groups directory: email field. Leave blank if none"},
         {'id': 'roles_members_field', 'type': 'string', 'mode': 'w',
          'label': "Roles directory: members field"},
         {'id': 'is_role_authenticated_empty', 'type': 'boolean', 'mode': 'w',
@@ -138,6 +140,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     groups_members_field  = 'members'
     groups_super_groups_field = ''
     groups_sub_groups_field = ''
+    groups_email_field = ''
     roles_members_field = 'members'
     is_role_authenticated_empty = True
     is_role_anonymous_empty = True
