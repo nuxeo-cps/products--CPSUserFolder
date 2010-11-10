@@ -808,8 +808,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
             raise Unauthorized("Switch user")
 
         # XXX find a non bypassable way to log the first time only
-        # at higher level
-        logger.debug('Switching user to %s', su_name)
+        # at higher level. See code in CookieCrumbler setting attr on the
+        # low level medusa request to have this is in access log.
+        logger.debug('Switching user from %s to %s', user, su_name)
         old_reqauth = getattr(request, '_auth', None)
         request._auth = self.getTrustedAuthString()  + ' ' + su_name
         # use again the trusted auth mechanism, this time from ourselves
