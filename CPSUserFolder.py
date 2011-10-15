@@ -46,7 +46,7 @@ from Products.CMFCore.utils import getToolByName
 from Products.CMFCore.utils import SimpleItemWithProperties
 from Products.CMFCore.permissions import ManagePortal
 
-from Products.CPSUtil.PropertiesPostProcessor import PropertiesPostProcessor
+from Products.CPSUtil.property import PropertiesPostProcessor
 from Products.CPSDirectory.BaseDirectory import AuthenticationFailed
 from Products.CPSUserFolder import TimeoutCache
 from Products.CPSUserFolder.interfaces import ICPSUserFolder
