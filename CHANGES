@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2456: raise exceptions upon invalid user switch requests for UI to catch
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

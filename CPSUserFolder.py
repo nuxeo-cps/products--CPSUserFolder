@@ -794,13 +794,13 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
     def _canSwitchUser(self, user):
         """Tell if user has the right to "switch user"."""
+        # TODO cleaner to check a permission on the portal object
         return user is not None and user.has_role('Manager')
 
     def _switchUser(self, request, user, su_name):
         """Use permission from 'user' to switch to user with name 'su_name'.
         """
 
-        # TODO cleaner to check a permission on the portal object
         if not self._canSwitchUser(user):
             logger.critical("User '%s' tried to "
                             "take user '%s' rights but doesn't have "
@@ -818,7 +818,7 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
 
         # avoid loops
         if self._canSwitchUser(su_user):
-            logger.error("Can't switch to an user that can switch users.")
+            logger.warn("Can't switch to an user that can switch users.")
             request._auth = old_reqauth
             return user
 
@@ -828,11 +828,22 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     def requestUserSwitch(self, su_name, resp=None, portal=None):
         """Do what is necessary so that next request is done as su_name.
 
-        No need to perform any security check: next request's job."""
+        No need to perform any security check: next request's job.
+        Raises:
+         - KeyError is user is not found
+         - ValueError('Switcher') if user can himself switch
+        """
         if resp is None:
             raise RuntimeError("Need a response object.")
         if portal is None:
            portal = getToolByName(self, 'portal_url').getPortalObject()
+
+        user = self.getUser(su_name)
+        if user is None:
+            raise KeyError(su_name)
+        if self._canSwitchUser(user):
+            raise ValueError('Switcher')
+
         resp.setCookie(SWITCH_USER_COOKIE, su_name,
                        path=portal.absolute_url_path())
 
