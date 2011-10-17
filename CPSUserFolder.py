@@ -127,6 +127,10 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
          'label': "Consider role:Authenticated as an empty group"},
         {'id': 'is_role_anonymous_empty', 'type': 'boolean', 'mode': 'w',
          'label': "Consider role:Anonymous as an empty group"},
+        {'id': 'email_for_authenticated', 'type': 'string', 'mode': 'w',
+         'label': "Email to use to reach all authenticated users"},
+        {'id': 'email_for_anonymous', 'type': 'string', 'mode': 'w',
+         'label': "Email (mailing-list) to use to reach all anonymous users"},
         {'id': 'cache_timeout', 'type': 'int', 'mode': 'w',
          'label': "Cache timeout"},
         )
@@ -144,6 +148,8 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     roles_members_field = 'members'
     is_role_authenticated_empty = True
     is_role_anonymous_empty = True
+    email_for_authenticated = ''
+    email_for_anonymous = ''
     cache_timeout = 300
 
     manage_options = (
