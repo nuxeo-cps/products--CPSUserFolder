@@ -6,8 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
-- #2456: raise exceptions upon invalid user switch requests for UI to catch
-- #2464: new properties to store on user folder emails for authenticated & anon
+-
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 
