@@ -30,8 +30,7 @@ from Products.GenericSetup.utils import importObjects
 from Products.GenericSetup.utils import XMLAdapterBase
 from Products.GenericSetup.utils import ObjectManagerHelpers
 from Products.GenericSetup.utils import PropertyManagerHelpers
-from Products.CPSUtil.PropertiesPostProcessor import (
-    PostProcessingPropertyManagerHelpers)
+from Products.CPSUtil.property import PostProcessingPropertyManagerHelpers
 
 from Products.GenericSetup.interfaces import INode
 from Products.GenericSetup.interfaces import IBody
