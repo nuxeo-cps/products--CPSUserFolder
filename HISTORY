@@ -1,4 +1,22 @@
 ===========================================================
+Package: CPSUserFolder 1.2.1-CPS-3.5
+===========================================================
+First release built by: gracinet at: 2011-11-23T19:59:07
+Requires
+~~~~~~~~
+-
+New features
+~~~~~~~~~~~~
+-
+Bug fixes
+~~~~~~~~~
+- #2456: raise exceptions upon invalid user switch requests for UI to catch
+- #2464: new properties to store on user folder emails for authenticated & anon
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: CPSUserFolder 1.2.0-CPS-3.5
 ===========================================================
 First release built by: gracinet at: 2011-09-28T20:54:55
