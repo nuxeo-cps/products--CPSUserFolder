@@ -6,7 +6,7 @@ New features
 -
 Bug fixes
 ~~~~~~~~~
--
+- #2537: use CPSUtil's GenericSetup; drop standard user folders export/import.
 New internal features
 ~~~~~~~~~~~~~~~~~~~~~
 - 

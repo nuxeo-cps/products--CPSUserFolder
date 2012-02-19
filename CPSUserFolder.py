@@ -92,6 +92,9 @@ class CPSUserFolder(PropertiesPostProcessor, SimpleItemWithProperties,
     id = 'acl_users'
     title = 'CPS User Folder'
 
+    generic_setup_name = 'users'
+    generic_setup_logger = 'users'
+
     isPrincipiaFolderish = 1
     isAUserFolder = 1
 

@@ -4,21 +4,7 @@
     xmlns:five="http://namespaces.zope.org/five">
 
   <adapter
-      factory=".exportimport.StandardUserFolderXMLAdapter"
-      provides="Products.GenericSetup.interfaces.IBody"
-      for="AccessControl.interfaces.IStandardUserFolder
-           Products.GenericSetup.interfaces.ISetupEnviron"
-      />
-
-  <adapter
-      factory=".exportimport.UserFolderWithGroupsXMLAdapter"
-      provides="Products.GenericSetup.interfaces.IBody"
-      for=".interfaces.IUserFolderWithGroups
-           Products.GenericSetup.interfaces.ISetupEnviron"
-      />
-
-  <adapter
-      factory=".exportimport.CPSUserFolderXMLAdapter"
+      factory="Products.CPSUtil.genericsetup.PropertiesSubObjectsXMLAdapter"
       provides="Products.GenericSetup.interfaces.IBody"
       for=".interfaces.ICPSUserFolder
            Products.GenericSetup.interfaces.ISetupEnviron"

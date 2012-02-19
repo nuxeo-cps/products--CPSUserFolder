@@ -32,6 +32,9 @@ import CPSUserFolder
 import CPSMemberDataTool
 import PatchForGruf # XXX
 
+from Products.CPSUtil.genericsetup import tool_steps
+export_step, import_step = tool_steps('acl_users', logger_id='users')
+
 def initialize(registrar):
     registrar.registerClass(
         CPSUserFolder.CPSUserFolder,
